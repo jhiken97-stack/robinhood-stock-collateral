@@ -254,6 +254,33 @@ function addChatbotMessage(role, text) {
   els.chatbotMessages.scrollTop = els.chatbotMessages.scrollHeight;
 }
 
+function getCollateralAssetSymbols() {
+  const symbols = state.collaterals
+    .map((asset) => asset.symbol)
+    .filter((symbol) => symbol && symbol !== 'UNKNOWN');
+
+  if (symbols.length > 0) return symbols;
+
+  const reserved = new Set([
+    'comet',
+    'fauceteer',
+    'timelock',
+    'configurator',
+    'rewards',
+    'cometFactory',
+    'assetListFactory',
+    'cometAdmin',
+    'configuratorAdmin',
+    'cometExt',
+    'rUSD',
+  ]);
+
+  return Object.keys(state.aliases)
+    .filter((key) => !key.includes(':') && !reserved.has(key))
+    .filter((key) => /^[A-Za-z0-9]+$/.test(key))
+    .sort((a, b) => a.localeCompare(b));
+}
+
 function isAdviceRequest(question) {
   const q = question.toLowerCase();
   const advicePatterns = [
@@ -284,6 +311,53 @@ function getChatbotAnswer(question) {
 
   if (isAdviceRequest(q)) {
     return CHATBOT_NO_ADVICE;
+  }
+
+  if (
+    q.includes('collateral') &&
+    (
+      q.includes('what assets') ||
+      q.includes('which assets') ||
+      q.includes('can i provide') ||
+      q.includes('accepted') ||
+      q.includes('supported')
+    )
+  ) {
+    const assets = getCollateralAssetSymbols();
+    if (assets.length === 0) {
+      return 'Collateral assets are not loaded yet. Connect wallet and click Refresh, then ask again.';
+    }
+    return `Supported collateral assets in this market: ${assets.join(', ')}.`;
+  }
+
+  if (
+    q.includes('borrow') &&
+    (
+      q.includes('what asset') ||
+      q.includes('which asset') ||
+      q.includes('what can i borrow') ||
+      q.includes('assets can i borrow') ||
+      q.includes('borrowable')
+    )
+  ) {
+    const baseSymbol = state.base?.symbol || 'rUSD';
+    return `Borrowable asset is the base token only: ${baseSymbol}.`;
+  }
+
+  if (
+    q.includes('supply') &&
+    (
+      q.includes('what assets') ||
+      q.includes('which assets') ||
+      q.includes('what can i supply')
+    )
+  ) {
+    const baseSymbol = state.base?.symbol || 'rUSD';
+    const collaterals = getCollateralAssetSymbols();
+    if (collaterals.length === 0) {
+      return `You can supply ${baseSymbol} as base, plus supported collateral assets once market data loads. Connect wallet and click Refresh.`;
+    }
+    return `You can supply base token ${baseSymbol}, and collateral assets: ${collaterals.join(', ')}.`;
   }
 
   if (q.includes('connect') && q.includes('wallet')) {

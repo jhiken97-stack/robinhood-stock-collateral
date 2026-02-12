@@ -1,0 +1,95 @@
+{
+  "name": "Robin Markets Stock Collateral",
+  "description": "Compound v3-style stock-collateral lending market on Robinhood public testnet.",
+  "version": "1.0.0",
+  "environment": "testnet",
+  "updatedAt": "2026-02-12",
+  "marketId": "robinhood:46630:0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79",
+  "chain": {
+    "name": "Robinhood Testnet",
+    "chainId": 46630,
+    "rpcUrl": "https://rpc.testnet.chain.robinhood.com",
+    "explorerUrl": "https://explorer.testnet.chain.robinhood.com",
+    "nativeCurrency": {
+      "symbol": "ETH",
+      "decimals": 18
+    }
+  },
+  "contracts": {
+    "comet": "0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79",
+    "base": {
+      "symbol": "rUSD",
+      "address": "0xA4825FEA7D8d633B7AD797f73CEc029B424b7597",
+      "decimals": 6
+    },
+    "collaterals": [
+      {
+        "symbol": "TSLA",
+        "address": "0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E",
+        "decimals": 18
+      },
+      {
+        "symbol": "AMZN",
+        "address": "0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02",
+        "decimals": 18
+      },
+      {
+        "symbol": "PLTR",
+        "address": "0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0",
+        "decimals": 18
+      },
+      {
+        "symbol": "NFLX",
+        "address": "0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93",
+        "decimals": 18
+      },
+      {
+        "symbol": "AMD",
+        "address": "0x71178BAc73cBeb415514eB542a8995b82669778d",
+        "decimals": 18
+      }
+    ]
+  },
+  "capabilities": {
+    "borrowableAssets": [
+      "rUSD"
+    ],
+    "collateralAssets": [
+      "TSLA",
+      "AMZN",
+      "PLTR",
+      "NFLX",
+      "AMD"
+    ],
+    "supportedActions": [
+      "readMarketState",
+      "approveErc20",
+      "supplyCollateral",
+      "withdrawCollateral",
+      "borrowBase",
+      "repayBase"
+    ],
+    "recommendedChecksBeforeTx": [
+      "verifyChainId46630",
+      "ensureAllowanceForSupplyOrRepay",
+      "checkCometMarketCashForBorrow",
+      "checkCapacityUsedAndHealthFactor"
+    ]
+  },
+  "safety": {
+    "noFinancialAdvice": true,
+    "allowedResponseScope": [
+      "protocol usage",
+      "transaction mechanics",
+      "risk metric explanation",
+      "troubleshooting"
+    ]
+  },
+  "links": {
+    "app": "./index.html",
+    "howTo": "./index.html#howto",
+    "terms": "./terms.html",
+    "issues": "https://github.com/jhiken97-stack/robinhood-stock-collateral/issues/new",
+    "agentInfo": "./ai-agents.html"
+  }
+}

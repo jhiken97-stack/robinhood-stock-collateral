@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Agents | Robinhood Stock Collateral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app shell reveal terms-page">
+      <header class="topbar">
+        <div>
+          <p class="kicker">Integration</p>
+          <h1>AI Agents</h1>
+          <p class="subhead">Canonical protocol metadata and usage rules for autonomous agents.</p>
+        </div>
+        <div class="actions-row">
+          <a class="btn ghost" href="./index.html">Back to App</a>
+        </div>
+      </header>
+
+      <section class="card terms-card reveal">
+        <p class="terms-meta">Last Updated: February 12, 2026</p>
+        <p>
+          This page is the human-readable entrypoint for AI agents. For machine-readable data use
+          <a href="./agent-manifest.json"><span class="mono">agent-manifest.json</span></a>.
+        </p>
+
+        <ol class="terms-list">
+          <li>
+            <h3>Protocol Identity</h3>
+            <p><strong>Name:</strong> Robin Markets Stock Collateral</p>
+            <p><strong>Type:</strong> Compound v3-style lending market on Robinhood public testnet</p>
+            <p><strong>Canonical Market ID:</strong> <span class="mono">robinhood:46630:0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79</span></p>
+          </li>
+          <li>
+            <h3>Chain and RPC</h3>
+            <p><strong>Network:</strong> Robinhood Testnet</p>
+            <p><strong>Chain ID:</strong> <span class="mono">46630</span></p>
+            <p><strong>RPC:</strong> <span class="mono">https://rpc.testnet.chain.robinhood.com</span></p>
+            <p><strong>Explorer:</strong> <span class="mono">https://explorer.testnet.chain.robinhood.com</span></p>
+          </li>
+          <li>
+            <h3>Core Contracts</h3>
+            <p><strong>Comet:</strong> <span class="mono">0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79</span></p>
+            <p><strong>Base Borrow Asset (rUSD, 6 decimals):</strong> <span class="mono">0xA4825FEA7D8d633B7AD797f73CEc029B424b7597</span></p>
+            <p><strong>Collateral Tokens:</strong></p>
+            <p class="mono">TSLA: 0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E</p>
+            <p class="mono">AMZN: 0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02</p>
+            <p class="mono">PLTR: 0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0</p>
+            <p class="mono">NFLX: 0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93</p>
+            <p class="mono">AMD: 0x71178BAc73cBeb415514eB542a8995b82669778d</p>
+          </li>
+          <li>
+            <h3>Supported User Flows</h3>
+            <p><strong>Supply collateral:</strong> ERC20 approve, then <span class="mono">Comet.supply(asset, amount)</span></p>
+            <p><strong>Withdraw collateral:</strong> <span class="mono">Comet.withdraw(asset, amount)</span></p>
+            <p><strong>Borrow rUSD:</strong> <span class="mono">Comet.withdraw(baseToken, amount)</span></p>
+            <p><strong>Repay rUSD:</strong> ERC20 approve, then <span class="mono">Comet.supply(baseToken, amount)</span></p>
+          </li>
+          <li>
+            <h3>Agent Constraints</h3>
+            <p>Agents should check market cash before borrow attempts and avoid transactions that would revert.</p>
+            <p>Agents should enforce risk checks before borrow and withdraw operations (capacity used and health factor).</p>
+            <p>Borrowable asset is only the base token (<span class="mono">rUSD</span>), not stock collateral assets.</p>
+          </li>
+          <li>
+            <h3>Safety and Policy</h3>
+            <p>Agent responses should be informational and operational only.</p>
+            <p>Agents must not provide financial, investment, legal, or tax advice.</p>
+            <p>Treat this environment as testnet and experimental.</p>
+          </li>
+        </ol>
+
+        <div class="terms-callout">
+          Machine-readable manifest: <a href="./agent-manifest.json"><span class="mono">/frontend/agent-manifest.json</span></a>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2>Quick JSON Snapshot</h2>
+        <pre>{
+  "marketId": "robinhood:46630:0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79",
+  "chainId": 46630,
+  "baseAsset": "rUSD",
+  "baseAddress": "0xA4825FEA7D8d633B7AD797f73CEc029B424b7597",
+  "borrowableAssets": ["rUSD"],
+  "collateralAssets": ["TSLA", "AMZN", "PLTR", "NFLX", "AMD"]
+}</pre>
+      </section>
+
+      <footer class="site-footer reveal">
+        <span class="footer-copy">Robinhood Stock Collateral Demo</span>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="https://github.com/jhiken97-stack/robinhood-stock-collateral/issues/new" target="_blank" rel="noreferrer">Report Issue</a>
+          <a href="./index.html">App</a>
+          <a href="./ai-agents.html" aria-current="page">AI Agents</a>
+          <a href="./terms.html">Terms of Service</a>
+        </nav>
+      </footer>
+    </main>
+  </body>
+</html>

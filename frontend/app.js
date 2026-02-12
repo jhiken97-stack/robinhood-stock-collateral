@@ -75,6 +75,8 @@ const els = {
   marketsBody: document.getElementById('markets-body'),
   txLog: document.getElementById('tx-log'),
   themeToggleBtn: document.getElementById('theme-toggle-btn'),
+  copyCometBtn: document.getElementById('copy-comet-btn'),
+  cometExplorerLink: document.getElementById('comet-explorer-link'),
   borrowCapacityBar: document.getElementById('borrow-capacity-bar'),
   borrowCapacityMeta: document.getElementById('borrow-capacity-meta'),
   healthFactorBar: document.getElementById('health-factor-bar'),
@@ -153,6 +155,21 @@ function setActiveTab(panel) {
   els.panelMarkets.classList.toggle('active', !dashboard);
   els.tabDashboardBtn.classList.toggle('active', dashboard);
   els.tabMarketsBtn.classList.toggle('active', !dashboard);
+}
+
+function setCometUi(address) {
+  if (!address) {
+    els.cometAddress.textContent = '-';
+    if (els.cometExplorerLink) {
+      els.cometExplorerLink.href = CHAIN.explorer;
+    }
+    return;
+  }
+  const value = address;
+  els.cometAddress.textContent = `${shortenAddress(value)} (${value})`;
+  if (els.cometExplorerLink) {
+    els.cometExplorerLink.href = `${CHAIN.explorer}/address/${value}`;
+  }
 }
 
 function applyTheme(theme) {
@@ -302,7 +319,7 @@ async function loadMarket() {
   }
 
   state.collaterals = assets;
-  els.cometAddress.textContent = `${shortenAddress(state.aliases.comet)} (${state.aliases.comet})`;
+  setCometUi(state.aliases.comet);
   renderAssetSelect();
 }
 
@@ -596,6 +613,14 @@ function wireEvents() {
     const current = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     applyTheme(current === 'dark' ? 'light' : 'dark');
   });
+  els.copyCometBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(state.aliases.comet);
+      log('Copied Comet address');
+    } catch (e) {
+      log(`Copy error: ${e.message || e}`);
+    }
+  });
   els.tabDashboardBtn.addEventListener('click', () => setActiveTab('dashboard'));
   els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
 
@@ -619,7 +644,7 @@ async function bootstrap() {
   initializeTheme();
   setActiveTab('dashboard');
   await loadAliases();
-  els.cometAddress.textContent = `${shortenAddress(state.aliases.comet)} (${state.aliases.comet})`;
+  setCometUi(state.aliases.comet);
   if (!getInjectedProvider()) {
     log('No injected wallet found. In MetaMask extension, enable site access for localhost.');
   }

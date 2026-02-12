@@ -37,11 +37,21 @@
           <span class="label">Network</span>
           <span id="network-status" class="value warning">Not connected</span>
         </div>
-        <div>
-          <span class="label">Comet</span>
-          <span id="comet-address" class="value mono">Loading...</span>
-        </div>
       </section>
+
+      <details class="advanced reveal">
+        <summary>Advanced</summary>
+        <div class="advanced-grid">
+          <div>
+            <span class="label">Comet</span>
+            <span id="comet-address" class="value mono">Loading...</span>
+          </div>
+          <div class="advanced-actions">
+            <button id="copy-comet-btn" class="btn ghost">Copy Address</button>
+            <a id="comet-explorer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Explorer</a>
+          </div>
+        </div>
+      </details>
 
       <section class="tabs reveal">
         <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>

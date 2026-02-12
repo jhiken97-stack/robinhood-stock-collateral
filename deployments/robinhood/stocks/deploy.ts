@@ -8,6 +8,26 @@ const RH_STOCK_ADDRESSES = {
   AAPL: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E',
 };
 
+function positiveIntegerFromEnv(key: string, fallback: number, max = Number.MAX_SAFE_INTEGER): number {
+  const raw = process.env[key];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > max) {
+    throw new Error(`${key} must be a positive integer <= ${max}, got \`${raw}\``);
+  }
+  return parsed;
+}
+
+function addressFromEnv(deploymentManager: DeploymentManager, key: string, fallback: string): string {
+  const raw = process.env[key];
+  if (!raw) return fallback;
+  const { ethers } = deploymentManager.hre;
+  if (!ethers.utils.isAddress(raw)) {
+    throw new Error(`${key} must be a valid 0x address, got \`${raw}\``);
+  }
+  return ethers.utils.getAddress(raw);
+}
+
 function priceFromEnv(symbol: string, fallback: number): number {
   const key = `RH_${symbol}_PRICE_USD`;
   const raw = process.env[key];
@@ -48,6 +68,9 @@ async function deployContracts(
   deploySpec: DeploySpec
 ): Promise<Deployed> {
   const signer = await deploymentManager.getSigner();
+  const manualFeedUpdater = addressFromEnv(deploymentManager, 'RH_PRICE_UPDATER', signer.address);
+  const stableMaxChangeBps = positiveIntegerFromEnv('RH_STABLE_MAX_CHANGE_BPS', 200, 10_000);
+  const stockMaxChangeBps = positiveIntegerFromEnv('RH_STOCK_MAX_CHANGE_BPS', 2_000, 10_000);
   const fauceteer = await deploymentManager.deploy('fauceteer', 'test/Fauceteer.sol', []);
 
   // Base asset for this market: a local 6-decimal test USD token.
@@ -67,14 +90,22 @@ async function deployContracts(
   await assertContractCode(deploymentManager, 'AAPL', AAPL.address);
   await validateERC20Metadata(AAPL, 'AAPL', 18);
 
-  // Testnet price feeds (8 decimals, Chainlink-compatible interface).
-  await deploymentManager.deploy('rUSD:priceFeed', 'pricefeeds/ConstantPriceFeed.sol', [
+  // Manual price feeds (8 decimals, Chainlink-compatible interface).
+  await deploymentManager.deploy('rUSD:priceFeed', 'pricefeeds/ManualPriceFeed.sol', [
     8,
+    'rUSD / USD (Manual)',
+    signer.address,
+    manualFeedUpdater,
+    stableMaxChangeBps,
     exp(1, 8),
   ]);
 
-  await deploymentManager.deploy('AAPL:priceFeed', 'pricefeeds/ConstantPriceFeed.sol', [
+  await deploymentManager.deploy('AAPL:priceFeed', 'pricefeeds/ManualPriceFeed.sol', [
     8,
+    'AAPL / USD (Manual)',
+    signer.address,
+    manualFeedUpdater,
+    stockMaxChangeBps,
     exp(priceFromEnv('AAPL', 200), 8),
   ]);
 
@@ -97,7 +128,7 @@ async function seedBaseLiquidity(deploymentManager: DeploymentManager) {
   const fauceteer = contracts.get('fauceteer')!;
 
   await deploymentManager.idempotent(
-    async () => (await rUSD.balanceOf(fauceteer.address)).gt(0),
+    async () => (await rUSD.balanceOf(fauceteer.address)).eq(0),
     async () => {
       debug('Minting rUSD to fauceteer');
       await wait(rUSD.connect(signer).allocateTo(fauceteer.address, exp(10_000_000, 6)));
@@ -105,7 +136,7 @@ async function seedBaseLiquidity(deploymentManager: DeploymentManager) {
   );
 
   await deploymentManager.idempotent(
-    async () => (await rUSD.balanceOf(signer.address)).gte(exp(1_000_000, 6)),
+    async () => (await rUSD.balanceOf(signer.address)).lt(exp(1_000_000, 6)),
     async () => {
       debug('Minting rUSD to deployer');
       await wait(rUSD.connect(signer).allocateTo(signer.address, exp(1_000_000, 6)));

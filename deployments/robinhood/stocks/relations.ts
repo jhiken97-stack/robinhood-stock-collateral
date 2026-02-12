@@ -2,6 +2,15 @@ import baseRelationConfig from '../../relations';
 
 export default {
   ...baseRelationConfig,
+  'rUSD:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
+  'AAPL:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
+  'TSLA:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
   '0xc9f9c86933092bbbfff3ccb4b105a4a94bf3bd4e': {
     artifact: 'contracts/ERC20.sol:ERC20',
   },

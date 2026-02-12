@@ -11,7 +11,31 @@ export default {
   'TSLA:priceFeed': {
     artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
   },
+  'AMZN:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
+  'PLTR:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
+  'NFLX:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
+  'AMD:priceFeed': {
+    artifact: 'contracts/pricefeeds/ManualPriceFeed.sol:ManualPriceFeed',
+  },
   '0xc9f9c86933092bbbfff3ccb4b105a4a94bf3bd4e': {
+    artifact: 'contracts/ERC20.sol:ERC20',
+  },
+  '0x5884ad2f920c162cfbbacc88c9c51aa75ec09e02': {
+    artifact: 'contracts/ERC20.sol:ERC20',
+  },
+  '0x1fbe1a0e43594b3455993b5de5fd0a7a266298d0': {
+    artifact: 'contracts/ERC20.sol:ERC20',
+  },
+  '0x3b8262a63d25f0477c4dde23f83cfe22cb768c93': {
+    artifact: 'contracts/ERC20.sol:ERC20',
+  },
+  '0x71178bac73cbeb415514eb542a8995b82669778d': {
     artifact: 'contracts/ERC20.sol:ERC20',
   },
   // In this testnet deployment governor/pauseGuardian can be an EOA.

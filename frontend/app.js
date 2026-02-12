@@ -1144,7 +1144,10 @@ function wireEvents() {
     const preview = readSavingsAllocationsFromInputs();
     setSavingsMetrics(preview);
   });
-  els.chatbotToggleBtn.addEventListener('click', () => setChatbotOpen(true));
+  els.chatbotToggleBtn.addEventListener('click', () => {
+    const shouldOpen = els.chatbotPanel ? els.chatbotPanel.hidden : true;
+    setChatbotOpen(shouldOpen);
+  });
   els.chatbotCloseBtn.addEventListener('click', () => setChatbotOpen(false));
   els.chatbotForm.addEventListener('submit', (event) => {
     event.preventDefault();

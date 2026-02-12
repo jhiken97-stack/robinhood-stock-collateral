@@ -470,6 +470,10 @@ body[data-theme='dark'] .warning {
   overflow: hidden;
 }
 
+.chatbot-panel[hidden] {
+  display: none !important;
+}
+
 .chatbot-head {
   display: flex;
   justify-content: space-between;

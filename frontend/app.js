@@ -55,9 +55,13 @@ const els = {
   reserves: document.getElementById('reserves'),
   baseSupply: document.getElementById('position-base-supply'),
   baseBorrow: document.getElementById('position-base-borrow'),
+  totalCollateral: document.getElementById('position-total-collateral'),
   capacityUsed: document.getElementById('position-capacity-used'),
   health: document.getElementById('position-health'),
+  liquidationTrigger: document.getElementById('position-liquidation-trigger'),
+  liquidationThresholdNote: document.getElementById('liquidation-threshold-note'),
   liquidation: document.getElementById('liquidation-indicator'),
+  collateralBreakdown: document.getElementById('collateral-breakdown'),
   assetSelect: document.getElementById('asset-select'),
   assetAmount: document.getElementById('asset-amount'),
   approveAssetBtn: document.getElementById('approve-asset-btn'),
@@ -69,6 +73,10 @@ const els = {
   repayBaseBtn: document.getElementById('repay-base-btn'),
   marketsBody: document.getElementById('markets-body'),
   txLog: document.getElementById('tx-log'),
+  tabDashboardBtn: document.getElementById('tab-dashboard-btn'),
+  tabMarketsBtn: document.getElementById('tab-markets-btn'),
+  panelDashboard: document.getElementById('panel-dashboard'),
+  panelMarkets: document.getElementById('panel-markets'),
 };
 
 const state = {
@@ -131,6 +139,14 @@ function decimalsFromScale(scaleBn) {
 function shortenAddress(address) {
   if (!address) return '-';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function setActiveTab(panel) {
+  const dashboard = panel === 'dashboard';
+  els.panelDashboard.classList.toggle('active', dashboard);
+  els.panelMarkets.classList.toggle('active', !dashboard);
+  els.tabDashboardBtn.classList.toggle('active', dashboard);
+  els.tabMarketsBtn.classList.toggle('active', !dashboard);
 }
 
 async function loadAliases() {
@@ -320,6 +336,7 @@ async function refreshUi() {
 
   let collateralBorrowPowerUsd = 0;
   let collateralLiqPowerUsd = 0;
+  const collateralBreakdown = [];
   const rowHtml = [];
 
   for (const market of state.collaterals) {
@@ -337,6 +354,9 @@ async function refreshUi() {
     const walletBalanceLabel = account ? `${fmtAmount(walletBalance, 4)} ${market.symbol}` : '-';
     const posted = bnToFloat(postedRaw, market.decimals);
     const postedUsd = posted * livePriceUsd;
+    if (postedUsd > 0) {
+      collateralBreakdown.push({ symbol: market.symbol, usd: postedUsd });
+    }
     collateralBorrowPowerUsd += postedUsd * market.borrowCF;
     collateralLiqPowerUsd += postedUsd * market.liquidateCF;
 
@@ -358,17 +378,40 @@ async function refreshUi() {
 
   const baseSupplyUsd = baseSupply * basePrice;
   const baseBorrowUsd = baseBorrow * basePrice;
+  const totalCollateralUsd = collateralBreakdown.reduce((sum, row) => sum + row.usd, 0);
 
   const borrowCapacityUsd = baseSupplyUsd + collateralBorrowPowerUsd;
   const liquidationCapacityUsd = baseSupplyUsd + collateralLiqPowerUsd;
+  const liquidationBorrowBase = basePrice > 0 ? liquidationCapacityUsd / basePrice : 0;
 
   const healthFactor = baseBorrowUsd <= 0 ? Number.POSITIVE_INFINITY : liquidationCapacityUsd / baseBorrowUsd;
   const capacityUsed = borrowCapacityUsd <= 0 ? 0 : (baseBorrowUsd / borrowCapacityUsd) * 100;
 
   els.baseSupply.textContent = `${fmtAmount(baseSupply, 4)} ${base.symbol} (${fmtUsd(baseSupplyUsd)})`;
   els.baseBorrow.textContent = `${fmtAmount(baseBorrow, 4)} ${base.symbol} (${fmtUsd(baseBorrowUsd)})`;
+  els.totalCollateral.textContent = fmtUsd(totalCollateralUsd);
   els.capacityUsed.textContent = `${fmtAmount(Math.max(0, capacityUsed), 2)}%`;
   els.health.textContent = Number.isFinite(healthFactor) ? fmtAmount(healthFactor, 3) : 'Infinity';
+  els.liquidationTrigger.textContent = '1.00';
+
+  if (!account) {
+    els.liquidationThresholdNote.textContent = 'Liquidation begins when health factor falls below 1.00.';
+    els.collateralBreakdown.innerHTML = '<li class="breakdown-item"><span>Connect wallet</span><span>-</span></li>';
+  } else if (totalCollateralUsd <= 0) {
+    els.liquidationThresholdNote.textContent = 'Supply collateral to establish borrow capacity.';
+    els.collateralBreakdown.innerHTML = '<li class="breakdown-item"><span>No collateral supplied</span><span>-</span></li>';
+  } else {
+    els.liquidationThresholdNote.textContent =
+      `At current prices, liquidation begins around ${fmtAmount(liquidationBorrowBase, 4)} ${base.symbol} borrowed (${fmtUsd(liquidationCapacityUsd)}).`;
+    const breakdownHtml = collateralBreakdown
+      .sort((a, b) => b.usd - a.usd)
+      .map((row) => {
+        const pct = totalCollateralUsd > 0 ? (row.usd / totalCollateralUsd) * 100 : 0;
+        return `<li class=\"breakdown-item\"><span>${row.symbol}</span><span>${fmtUsd(row.usd)} (${fmtAmount(pct, 1)}%)</span></li>`;
+      })
+      .join('');
+    els.collateralBreakdown.innerHTML = breakdownHtml;
+  }
 
   const liq = els.liquidation;
   liq.className = 'pill';
@@ -495,6 +538,8 @@ async function connectAndLoad() {
 function wireEvents() {
   els.connectBtn.addEventListener('click', () => connectAndLoad().catch(() => {}));
   els.refreshBtn.addEventListener('click', () => refreshUi().catch((e) => log(`Refresh error: ${e.message || e}`)));
+  els.tabDashboardBtn.addEventListener('click', () => setActiveTab('dashboard'));
+  els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
 
   els.approveAssetBtn.addEventListener('click', () => approveAsset().catch((e) => log(`Approve error: ${e.message || e}`)));
   els.supplyAssetBtn.addEventListener('click', () => supplyAsset().catch((e) => log(`Supply error: ${e.message || e}`)));
@@ -513,6 +558,7 @@ function wireEvents() {
 
 async function bootstrap() {
   wireEvents();
+  setActiveTab('dashboard');
   await loadAliases();
   els.cometAddress.textContent = `${shortenAddress(state.aliases.comet)} (${state.aliases.comet})`;
   if (!getInjectedProvider()) {

@@ -7,14 +7,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   </head>
   <body>
-    <div class="ambient"></div>
     <main class="app shell reveal">
       <header class="topbar">
         <div>
@@ -43,107 +42,130 @@
         </div>
       </section>
 
-      <section class="grid stats reveal">
-        <article class="card stat">
-          <h3>Total Borrow</h3>
-          <p id="total-borrow">-</p>
-        </article>
-        <article class="card stat">
-          <h3>Market Cash</h3>
-          <p id="market-cash">-</p>
-        </article>
-        <article class="card stat">
-          <h3>Base Borrow Min</h3>
-          <p id="borrow-min">-</p>
-        </article>
-        <article class="card stat">
-          <h3>Protocol Reserves</h3>
-          <p id="reserves">-</p>
-        </article>
+      <section class="tabs reveal">
+        <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>
+        <button id="tab-markets-btn" class="tab-btn" data-panel="markets">All Markets</button>
       </section>
 
-      <section class="grid two reveal">
-        <article class="card">
-          <h2>Your Position</h2>
-          <div class="metrics">
-            <div>
-              <span>Base Supplied</span>
-              <strong id="position-base-supply">-</strong>
-            </div>
-            <div>
-              <span>Base Borrowed</span>
-              <strong id="position-base-borrow">-</strong>
-            </div>
-            <div>
-              <span>Borrow Capacity Used</span>
-              <strong id="position-capacity-used">-</strong>
-            </div>
-            <div>
-              <span>Health Factor</span>
-              <strong id="position-health">-</strong>
-            </div>
-          </div>
-          <div id="liquidation-indicator" class="pill neutral">No data</div>
-        </article>
+      <section id="panel-dashboard" class="tab-panel active">
+        <section class="grid stats reveal">
+          <article class="card stat">
+            <h3>Total Borrow</h3>
+            <p id="total-borrow">-</p>
+          </article>
+          <article class="card stat">
+            <h3>Market Cash</h3>
+            <p id="market-cash">-</p>
+          </article>
+          <article class="card stat">
+            <h3>Base Borrow Min</h3>
+            <p id="borrow-min">-</p>
+          </article>
+          <article class="card stat">
+            <h3>Protocol Reserves</h3>
+            <p id="reserves">-</p>
+          </article>
+        </section>
 
-        <article class="card">
-          <h2>Actions</h2>
-          <div class="form-grid">
-            <label>
-              <span>Asset</span>
-              <select id="asset-select"></select>
-            </label>
-            <label>
-              <span>Amount</span>
-              <input id="asset-amount" type="number" min="0" step="any" placeholder="0.0" />
-            </label>
-          </div>
-          <div class="btn-row">
-            <button id="approve-asset-btn" class="btn ghost">Approve</button>
-            <button id="supply-asset-btn" class="btn">Supply</button>
-            <button id="withdraw-asset-btn" class="btn danger">Withdraw</button>
-          </div>
+        <section class="grid two reveal">
+          <article class="card">
+            <h2>Your Position</h2>
+            <div class="metrics">
+              <div>
+                <span>Base Supplied</span>
+                <strong id="position-base-supply">-</strong>
+              </div>
+              <div>
+                <span>Base Borrowed</span>
+                <strong id="position-base-borrow">-</strong>
+              </div>
+              <div>
+                <span>Total Collateral Posted</span>
+                <strong id="position-total-collateral">-</strong>
+              </div>
+              <div>
+                <span>Borrow Capacity Used</span>
+                <strong id="position-capacity-used">-</strong>
+              </div>
+              <div>
+                <span>Health Factor</span>
+                <strong id="position-health">-</strong>
+              </div>
+              <div>
+                <span>Liquidation Trigger HF</span>
+                <strong id="position-liquidation-trigger">1.00</strong>
+              </div>
+            </div>
+            <p id="liquidation-threshold-note" class="hint">Liquidation begins when health factor falls below 1.00.</p>
+            <div id="liquidation-indicator" class="pill neutral">No data</div>
 
-          <hr />
+            <div class="breakdown-wrap">
+              <h3>Collateral Breakdown</h3>
+              <ul id="collateral-breakdown" class="breakdown-list"></ul>
+            </div>
+          </article>
 
-          <div class="form-grid">
-            <label>
-              <span>Borrow/Repay Base Amount</span>
-              <input id="base-amount" type="number" min="0" step="any" placeholder="0.0" />
-            </label>
-          </div>
-          <div class="btn-row">
-            <button id="approve-base-btn" class="btn ghost">Approve Base</button>
-            <button id="borrow-base-btn" class="btn">Borrow Base</button>
-            <button id="repay-base-btn" class="btn danger">Repay Base</button>
-          </div>
-        </article>
+          <article class="card">
+            <h2>Actions</h2>
+            <div class="form-grid">
+              <label>
+                <span>Asset</span>
+                <select id="asset-select"></select>
+              </label>
+              <label>
+                <span>Amount</span>
+                <input id="asset-amount" type="number" min="0" step="any" placeholder="0.0" />
+              </label>
+            </div>
+            <div class="btn-row">
+              <button id="approve-asset-btn" class="btn ghost">Approve</button>
+              <button id="supply-asset-btn" class="btn">Supply</button>
+              <button id="withdraw-asset-btn" class="btn danger">Withdraw</button>
+            </div>
+
+            <hr />
+
+            <div class="form-grid">
+              <label>
+                <span>Borrow/Repay Base Amount</span>
+                <input id="base-amount" type="number" min="0" step="any" placeholder="0.0" />
+              </label>
+            </div>
+            <div class="btn-row">
+              <button id="approve-base-btn" class="btn ghost">Approve Base</button>
+              <button id="borrow-base-btn" class="btn">Borrow Base</button>
+              <button id="repay-base-btn" class="btn danger">Repay Base</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="card reveal">
+          <h2>Transaction Log</h2>
+          <pre id="tx-log">Ready.</pre>
+        </section>
       </section>
 
-      <section class="card reveal">
-        <h2>All Markets</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Asset</th>
-                <th>Price (USD)</th>
-                <th>Wallet Balance</th>
-                <th>Your Collateral Posted</th>
-                <th>Protocol Collateral Posted</th>
-                <th>Supply Cap</th>
-                <th>Borrow CF</th>
-                <th>Liquidate CF</th>
-              </tr>
-            </thead>
-            <tbody id="markets-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card reveal">
-        <h2>Transaction Log</h2>
-        <pre id="tx-log">Ready.</pre>
+      <section id="panel-markets" class="tab-panel">
+        <section class="card reveal">
+          <h2>All Markets</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Price (USD)</th>
+                  <th>Wallet Balance</th>
+                  <th>Your Collateral Posted</th>
+                  <th>Protocol Collateral Posted</th>
+                  <th>Supply Cap</th>
+                  <th>Borrow CF</th>
+                  <th>Liquidate CF</th>
+                </tr>
+              </thead>
+              <tbody id="markets-body"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
     </main>
 

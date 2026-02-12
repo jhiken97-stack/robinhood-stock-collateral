@@ -524,6 +524,28 @@ body[data-theme='dark'] .terms-callout {
   margin-top: 0;
 }
 
+.limitations-block {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--card);
+}
+
+.limitations-block h3 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+}
+
+.limitations-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .stats {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 12px;

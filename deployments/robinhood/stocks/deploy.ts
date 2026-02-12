@@ -1,5 +1,5 @@
 import { Deployed, DeploymentManager } from '../../../plugins/deployment_manager';
-import { debug, DeploySpec, cloneGov, deployComet, exp, wait } from '../../../src/deploy';
+import { debug, DeploySpec, deployComet, exp, wait } from '../../../src/deploy';
 
 const RH_STOCK_ADDRESSES = {
   // Robinhood docs list this as a testnet stock token contract.
@@ -48,9 +48,7 @@ async function deployContracts(
   deploySpec: DeploySpec
 ): Promise<Deployed> {
   const signer = await deploymentManager.getSigner();
-
-  // Local governance for testnet iteration.
-  const { COMP, fauceteer } = await cloneGov(deploymentManager);
+  const fauceteer = await deploymentManager.deploy('fauceteer', 'test/Fauceteer.sol', []);
 
   // Base asset for this market: a local 6-decimal test USD token.
   const rUSD = await deploymentManager.deploy('rUSD', 'test/FaucetToken.sol', [
@@ -60,7 +58,12 @@ async function deployContracts(
     'rUSD',
   ]);
 
-  const AAPL = await deploymentManager.existing('AAPL', RH_STOCK_ADDRESSES.AAPL, 'robinhood');
+  const AAPL = await deploymentManager.existing(
+    'AAPL',
+    RH_STOCK_ADDRESSES.AAPL,
+    'robinhood',
+    'contracts/ERC20.sol:ERC20'
+  );
   await assertContractCode(deploymentManager, 'AAPL', AAPL.address);
   await validateERC20Metadata(AAPL, 'AAPL', 18);
 
@@ -75,17 +78,15 @@ async function deployContracts(
     exp(priceFromEnv('AAPL', 200), 8),
   ]);
 
-  const deployed = await deployComet(deploymentManager, deploySpec, {}, true);
-  const { rewards } = deployed;
-
-  await deploymentManager.idempotent(
-    async () => (await COMP.balanceOf(rewards.address)).gt(0),
-    async () => {
-      debug('Funding CometRewards with COMP');
-      await wait(COMP.connect(signer).transfer(rewards.address, exp(1_000_000, 18)));
-    }
+  const deployed = await deployComet(
+    deploymentManager,
+    deploySpec,
+    {
+      governor: signer.address,
+      pauseGuardian: signer.address,
+    },
+    true
   );
-
   return { ...deployed, fauceteer };
 }
 

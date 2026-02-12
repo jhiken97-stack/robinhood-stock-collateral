@@ -9,11 +9,11 @@ This deployment targets Robinhood public testnet (`chainId=46630`) and configure
 ```bash
 ROBINHOOD_RPC_LINK="https://rpc.testnet.chain.robinhood.com" \
 RH_AAPL_PRICE_USD="200" \
-yarn hardhat deploy --network robinhood --deployment stocks --no-verify
+yarn hardhat deploy --network robinhood --deployment stocks --no-verify --no-verify-impl
 ```
 
 ## Notes
 
 - `RH_AAPL_PRICE_USD` sets the initial AAPL/USD oracle value for `ConstantPriceFeed`.
-- `--no-verify` is recommended until explorer verification API behavior is confirmed.
+- `--no-verify --no-verify-impl` avoids a known verify-task issue in this repo.
 - To add more Robinhood stock tokens as collateral, create a migration under `deployments/robinhood/stocks/migrations/` once each token address is validated on-chain.

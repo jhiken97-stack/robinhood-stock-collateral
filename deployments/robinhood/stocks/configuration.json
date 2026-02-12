@@ -21,7 +21,6 @@
     "baseBorrowSpeed": "0e15",
     "baseMinForRewards": "100e6"
   },
-  "rewardToken": "COMP",
   "assets": {
     "AAPL": {
       "decimals": "18",

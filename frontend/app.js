@@ -73,6 +73,7 @@ const els = {
 
 const state = {
   aliases: { ...FALLBACK_ALIASES },
+  injected: null,
   provider: null,
   signer: null,
   account: null,
@@ -88,6 +89,16 @@ function requireConnected() {
   if (!state.account || !state.signer || !state.comet) {
     throw new Error('Connect wallet first');
   }
+}
+
+function getInjectedProvider() {
+  const eth = window.ethereum;
+  if (!eth) return null;
+  if (Array.isArray(eth.providers) && eth.providers.length > 0) {
+    const metamask = eth.providers.find((p) => p && p.isMetaMask);
+    return metamask || eth.providers[0];
+  }
+  return eth;
 }
 
 function log(message) {
@@ -145,15 +156,17 @@ async function loadAliases() {
 }
 
 async function ensureWallet() {
-  if (!window.ethereum) {
+  const injected = getInjectedProvider();
+  if (!injected) {
     throw new Error('MetaMask not detected. Install MetaMask to use this dApp.');
   }
+  state.injected = injected;
 
   if (!state.provider) {
-    state.provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+    state.provider = new ethers.providers.Web3Provider(injected, 'any');
   }
 
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const accounts = await injected.request({ method: 'eth_requestAccounts' });
   state.account = ethers.utils.getAddress(accounts[0]);
   state.signer = state.provider.getSigner();
 
@@ -172,14 +185,15 @@ async function ensureWallet() {
 }
 
 async function switchToRobinhood() {
+  if (!state.injected) throw new Error('Wallet provider not available');
   try {
-    await window.ethereum.request({
+    await state.injected.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: CHAIN.hexId }],
     });
   } catch (switchErr) {
     if (switchErr.code === 4902) {
-      await window.ethereum.request({
+      await state.injected.request({
         method: 'wallet_addEthereumChain',
         params: [
           {
@@ -485,9 +499,10 @@ function wireEvents() {
   els.borrowBaseBtn.addEventListener('click', () => borrowBase().catch((e) => log(`Borrow error: ${e.message || e}`)));
   els.repayBaseBtn.addEventListener('click', () => repayBase().catch((e) => log(`Repay error: ${e.message || e}`)));
 
-  if (window.ethereum) {
-    window.ethereum.on('accountsChanged', () => connectAndLoad().catch(() => {}));
-    window.ethereum.on('chainChanged', () => connectAndLoad().catch(() => {}));
+  const injected = getInjectedProvider();
+  if (injected && injected.on) {
+    injected.on('accountsChanged', () => connectAndLoad().catch(() => {}));
+    injected.on('chainChanged', () => connectAndLoad().catch(() => {}));
   }
 }
 
@@ -495,6 +510,9 @@ async function bootstrap() {
   wireEvents();
   await loadAliases();
   els.cometAddress.textContent = `${shortenAddress(state.aliases.comet)} (${state.aliases.comet})`;
+  if (!getInjectedProvider()) {
+    log('No injected wallet found. In MetaMask extension, enable site access for localhost.');
+  }
   setConnectedUi();
 
   if (window.ethereum && window.ethereum.selectedAddress) {

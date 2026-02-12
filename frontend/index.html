@@ -16,15 +16,33 @@
   <body>
     <main class="app shell reveal">
       <header class="topbar">
-        <div>
-          <p class="kicker">Robinhood Testnet</p>
-          <h1>Stock Collateral Lending</h1>
-          <p class="subhead">Compound v3 market dashboard for supply, borrow, and risk monitoring.</p>
+        <div class="brand-wrap">
+          <div class="brand-logo-shell">
+            <img
+              class="brand-logo"
+              src="./assets/robin-markets-logo.svg"
+              alt="Robin Markets logo"
+            />
+          </div>
+          <div>
+            <p class="kicker">Robinhood Testnet</p>
+            <h1>Stock Collateral Lending</h1>
+            <p class="subhead">Supply your Robinhood Stock Tokens as Collateral and Borrow rUSD</p>
+          </div>
         </div>
-        <div class="actions-row">
-          <button id="theme-toggle-btn" class="btn ghost">Dark Mode</button>
-          <button id="refresh-btn" class="btn ghost">Refresh</button>
-          <button id="connect-btn" class="btn">Connect Wallet</button>
+        <div class="topbar-actions">
+          <div class="actions-row">
+            <button id="theme-toggle-btn" class="btn ghost">Dark Mode</button>
+            <button id="refresh-btn" class="btn ghost">Refresh</button>
+            <button id="connect-btn" class="btn">Connect Wallet</button>
+          </div>
+          <div class="points-pill" aria-live="polite">
+            <span class="points-pill-eye" aria-hidden="true">👀</span>
+            <span class="points-pill-label">Points</span>
+            <strong id="position-points-earned">0</strong>
+            <span class="points-pill-sep">•</span>
+            <span id="position-points-rate">0 pts/min</span>
+          </div>
         </div>
       </header>
 
@@ -39,23 +57,10 @@
         </div>
       </section>
 
-      <details class="advanced reveal">
-        <summary>Advanced</summary>
-        <div class="advanced-grid">
-          <div>
-            <span class="label">Comet</span>
-            <span id="comet-address" class="value mono">Loading...</span>
-          </div>
-          <div class="advanced-actions">
-            <button id="copy-comet-btn" class="btn ghost">Copy Address</button>
-            <a id="comet-explorer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Explorer</a>
-          </div>
-        </div>
-      </details>
-
       <section class="tabs reveal">
         <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>
         <button id="tab-markets-btn" class="tab-btn" data-panel="markets">All Markets</button>
+        <button id="tab-savings-btn" class="tab-btn" data-panel="savings">Savings</button>
       </section>
 
       <section id="panel-dashboard" class="tab-panel active">
@@ -127,8 +132,18 @@
                 </div>
               </div>
             </div>
+            <div class="risk-zone-wrap">
+              <div class="risk-zone-head">
+                <span>HF Risk Zone</span>
+                <strong id="health-zone-label">-</strong>
+              </div>
+              <div class="risk-zone-scale">
+                <span id="health-zone-safe" class="risk-zone-segment safe">Safe</span>
+                <span id="health-zone-caution" class="risk-zone-segment caution">Caution</span>
+                <span id="health-zone-danger" class="risk-zone-segment danger">Danger</span>
+              </div>
+            </div>
             <p id="liquidation-threshold-note" class="hint">Liquidation begins when health factor falls below 1.00.</p>
-            <div id="liquidation-indicator" class="pill neutral">No data</div>
 
             <div class="breakdown-wrap">
               <h3>Collateral Breakdown</h3>
@@ -136,36 +151,48 @@
             </div>
           </article>
 
-          <article class="card">
+          <article class="card actions-card">
             <h2>Actions</h2>
-            <div class="form-grid">
-              <label>
-                <span>Asset</span>
-                <select id="asset-select"></select>
-              </label>
-              <label>
-                <span>Amount</span>
-                <input id="asset-amount" type="number" min="0" step="any" placeholder="0.0" />
-              </label>
-            </div>
-            <div class="btn-row">
-              <button id="approve-asset-btn" class="btn ghost">Approve</button>
-              <button id="supply-asset-btn" class="btn">Supply</button>
-              <button id="withdraw-asset-btn" class="btn danger">Withdraw</button>
-            </div>
+            <div class="actions-stack">
+              <section class="action-group">
+                <div class="action-group-head">
+                  <h3>Collateral</h3>
+                  <span>Supply / Withdraw</span>
+                </div>
+                <div class="action-inputs action-inputs-two">
+                  <label>
+                    <span>Asset</span>
+                    <select id="asset-select"></select>
+                  </label>
+                  <label>
+                    <span>Amount</span>
+                    <input id="asset-amount" type="number" min="0" step="any" placeholder="0.0" />
+                  </label>
+                </div>
+                <div class="action-buttons">
+                  <button id="approve-asset-btn" class="btn ghost">Approve</button>
+                  <button id="supply-asset-btn" class="btn">Supply</button>
+                  <button id="withdraw-asset-btn" class="btn danger">Withdraw</button>
+                </div>
+              </section>
 
-            <hr />
-
-            <div class="form-grid">
-              <label>
-                <span>Borrow/Repay Base Amount</span>
-                <input id="base-amount" type="number" min="0" step="any" placeholder="0.0" />
-              </label>
-            </div>
-            <div class="btn-row">
-              <button id="approve-base-btn" class="btn ghost">Approve Base</button>
-              <button id="borrow-base-btn" class="btn">Borrow Base</button>
-              <button id="repay-base-btn" class="btn danger">Repay Base</button>
+              <section class="action-group">
+                <div class="action-group-head">
+                  <h3>Base</h3>
+                  <span>Borrow / Repay</span>
+                </div>
+                <div class="action-inputs">
+                  <label>
+                    <span>Amount</span>
+                    <input id="base-amount" type="number" min="0" step="any" placeholder="0.0" />
+                  </label>
+                </div>
+                <div class="action-buttons">
+                  <button id="approve-base-btn" class="btn ghost">Approve Base</button>
+                  <button id="borrow-base-btn" class="btn">Borrow Base</button>
+                  <button id="repay-base-btn" class="btn danger">Repay Base</button>
+                </div>
+              </section>
             </div>
           </article>
         </section>
@@ -174,6 +201,20 @@
           <h2>Transaction Log</h2>
           <pre id="tx-log">Ready.</pre>
         </section>
+
+        <details class="advanced reveal">
+          <summary>Advanced</summary>
+          <div class="advanced-grid">
+            <div>
+              <span class="label">Comet</span>
+              <span id="comet-address" class="value mono">Loading...</span>
+            </div>
+            <div class="advanced-actions">
+              <button id="copy-comet-btn" class="btn ghost">Copy Address</button>
+              <a id="comet-explorer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Explorer</a>
+            </div>
+          </div>
+        </details>
       </section>
 
       <section id="panel-markets" class="tab-panel">
@@ -198,6 +239,71 @@
           </div>
         </section>
       </section>
+
+      <section id="panel-savings" class="tab-panel">
+        <section class="card reveal">
+          <h2>Savings Strategies - Put your rUSD to Work</h2>
+          <p class="hint">
+            Experimental feature: no smart-contract routing is executed on Robinhood testnet. These are simulated allocations of borrowed
+            <span id="savings-base-symbol">rUSD</span> with hypothetical APY.
+          </p>
+
+          <div class="savings-stats">
+            <div class="savings-stat">
+              <span>Borrowed Available</span>
+              <strong id="savings-borrowed">-</strong>
+            </div>
+            <div class="savings-stat">
+              <span>Allocated</span>
+              <strong id="savings-allocated">-</strong>
+            </div>
+            <div class="savings-stat">
+              <span>Unallocated</span>
+              <strong id="savings-unallocated">-</strong>
+            </div>
+            <div class="savings-stat">
+              <span>Weighted APY</span>
+              <strong id="savings-weighted-apy">-</strong>
+            </div>
+            <div class="savings-stat">
+              <span>Est. Annual Yield</span>
+              <strong id="savings-annual-yield">-</strong>
+            </div>
+            <div class="savings-stat">
+              <span>Est. Monthly Yield</span>
+              <strong id="savings-monthly-yield">-</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>Target Asset</th>
+                  <th>APY</th>
+                  <th>Allocation Amount (<span id="savings-allocation-symbol">rUSD</span>)</th>
+                  <th>Share of Borrowed</th>
+                </tr>
+              </thead>
+              <tbody id="savings-strategies-body"></tbody>
+            </table>
+          </div>
+
+          <div class="btn-row">
+            <button id="savings-apply-btn" class="btn">Apply Allocations</button>
+            <button id="savings-reset-btn" class="btn ghost">Reset Allocations</button>
+          </div>
+          <p class="hint fine-print">A 0.1% admin fee is charged when allocating funds to a strategy.</p>
+        </section>
+      </section>
+
+      <footer class="site-footer reveal">
+        <span class="footer-copy">Robinhood Stock Collateral Demo</span>
+        <nav class="footer-links" aria-label="Legal">
+          <a href="./terms.html">Terms of Service</a>
+        </nav>
+      </footer>
     </main>
 
     <script type="module" src="./app.js"></script>

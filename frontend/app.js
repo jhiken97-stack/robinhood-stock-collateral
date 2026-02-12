@@ -7,6 +7,13 @@ const CHAIN = {
   nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
 };
 const THEME_KEY = 'robinhood-ui-theme';
+const SAVINGS_KEY = 'robinhood-savings-allocations-v1';
+const POINTS_KEY_PREFIX = 'robinhood-points-v1';
+const SAVINGS_STRATEGIES = [
+  { id: 'aave_gho', name: 'Aave Savings', asset: 'GHO', apy: 0.0425 },
+  { id: 'ethena_usde', name: 'Ethena Savings', asset: 'USDe', apy: 0.058 },
+  { id: 'sky_usds', name: 'Sky Savings', asset: 'USDS', apy: 0.0375 },
+];
 
 const FALLBACK_ALIASES = {
   comet: '0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79',
@@ -27,8 +34,6 @@ const COMET_ABI = [
   'function totalBorrow() view returns (uint256)',
   'function getReserves() view returns (int256)',
   'function totalsCollateral(address) view returns (uint128 totalSupplyAsset, uint128 _reserved)',
-  'function isLiquidatable(address) view returns (bool)',
-  'function isBorrowCollateralized(address) view returns (bool)',
   'function baseBorrowMin() view returns (uint104)',
   'function getPrice(address) view returns (uint256)',
   'function supply(address,uint256)',
@@ -60,8 +65,9 @@ const els = {
   capacityUsed: document.getElementById('position-capacity-used'),
   health: document.getElementById('position-health'),
   liquidationTrigger: document.getElementById('position-liquidation-trigger'),
+  pointsEarned: document.getElementById('position-points-earned'),
+  pointsRate: document.getElementById('position-points-rate'),
   liquidationThresholdNote: document.getElementById('liquidation-threshold-note'),
-  liquidation: document.getElementById('liquidation-indicator'),
   collateralBreakdown: document.getElementById('collateral-breakdown'),
   assetSelect: document.getElementById('asset-select'),
   assetAmount: document.getElementById('asset-amount'),
@@ -81,10 +87,27 @@ const els = {
   borrowCapacityMeta: document.getElementById('borrow-capacity-meta'),
   healthFactorBar: document.getElementById('health-factor-bar'),
   healthFactorMeta: document.getElementById('health-factor-meta'),
+  healthZoneLabel: document.getElementById('health-zone-label'),
+  healthZoneSafe: document.getElementById('health-zone-safe'),
+  healthZoneCaution: document.getElementById('health-zone-caution'),
+  healthZoneDanger: document.getElementById('health-zone-danger'),
   tabDashboardBtn: document.getElementById('tab-dashboard-btn'),
   tabMarketsBtn: document.getElementById('tab-markets-btn'),
+  tabSavingsBtn: document.getElementById('tab-savings-btn'),
   panelDashboard: document.getElementById('panel-dashboard'),
   panelMarkets: document.getElementById('panel-markets'),
+  panelSavings: document.getElementById('panel-savings'),
+  savingsBaseSymbol: document.getElementById('savings-base-symbol'),
+  savingsAllocationSymbol: document.getElementById('savings-allocation-symbol'),
+  savingsBorrowed: document.getElementById('savings-borrowed'),
+  savingsAllocated: document.getElementById('savings-allocated'),
+  savingsUnallocated: document.getElementById('savings-unallocated'),
+  savingsWeightedApy: document.getElementById('savings-weighted-apy'),
+  savingsAnnualYield: document.getElementById('savings-annual-yield'),
+  savingsMonthlyYield: document.getElementById('savings-monthly-yield'),
+  savingsStrategiesBody: document.getElementById('savings-strategies-body'),
+  savingsApplyBtn: document.getElementById('savings-apply-btn'),
+  savingsResetBtn: document.getElementById('savings-reset-btn'),
 };
 
 const state = {
@@ -97,6 +120,13 @@ const state = {
   comet: null,
   baseToken: null,
   base: null,
+  currentBaseBorrow: 0,
+  currentCollateralUsd: 0,
+  savingsAllocations: {},
+  points: 0,
+  pointsStorageKey: null,
+  pointsLastUpdatedMs: Date.now(),
+  pointsLastPersistMs: 0,
   collaterals: [],
   loading: false,
 };
@@ -150,11 +180,26 @@ function shortenAddress(address) {
 }
 
 function setActiveTab(panel) {
-  const dashboard = panel === 'dashboard';
-  els.panelDashboard.classList.toggle('active', dashboard);
-  els.panelMarkets.classList.toggle('active', !dashboard);
-  els.tabDashboardBtn.classList.toggle('active', dashboard);
-  els.tabMarketsBtn.classList.toggle('active', !dashboard);
+  const tabMap = {
+    dashboard: {
+      panel: els.panelDashboard,
+      button: els.tabDashboardBtn,
+    },
+    markets: {
+      panel: els.panelMarkets,
+      button: els.tabMarketsBtn,
+    },
+    savings: {
+      panel: els.panelSavings,
+      button: els.tabSavingsBtn,
+    },
+  };
+
+  Object.entries(tabMap).forEach(([key, entry]) => {
+    const active = key === panel;
+    entry.panel.classList.toggle('active', active);
+    entry.button.classList.toggle('active', active);
+  });
 }
 
 function setCometUi(address) {
@@ -189,6 +234,246 @@ function initializeTheme() {
   }
   const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(preferDark ? 'dark' : 'light');
+}
+
+function sanitizeAllocationValue(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n;
+}
+
+function loadSavingsAllocations() {
+  const base = Object.fromEntries(SAVINGS_STRATEGIES.map((s) => [s.id, 0]));
+  try {
+    const raw = localStorage.getItem(SAVINGS_KEY);
+    if (!raw) return base;
+    const parsed = JSON.parse(raw);
+    for (const strategy of SAVINGS_STRATEGIES) {
+      base[strategy.id] = sanitizeAllocationValue(parsed[strategy.id]);
+    }
+    return base;
+  } catch (_) {
+    return base;
+  }
+}
+
+function saveSavingsAllocations(allocations) {
+  localStorage.setItem(SAVINGS_KEY, JSON.stringify(allocations));
+}
+
+function getBaseSymbol() {
+  return state.base?.symbol || 'rUSD';
+}
+
+function getPointsStorageKey() {
+  if (!state.account || !state.chainId) return null;
+  return `${POINTS_KEY_PREFIX}:${state.chainId}:${state.account.toLowerCase()}`;
+}
+
+function renderPoints() {
+  const earned = Number.isFinite(state.points) ? state.points : 0;
+  const ratePerMinute = Number.isFinite(state.currentCollateralUsd) ? Math.max(0, state.currentCollateralUsd) : 0;
+  els.pointsEarned.textContent = fmtAmount(earned, 2);
+  els.pointsRate.textContent = `${fmtAmount(ratePerMinute, 2)} pts/min`;
+}
+
+function persistPointsState() {
+  if (!state.pointsStorageKey) return;
+  try {
+    localStorage.setItem(state.pointsStorageKey, JSON.stringify({
+      points: Number.isFinite(state.points) ? state.points : 0,
+      lastUpdatedMs: Number.isFinite(state.pointsLastUpdatedMs) ? state.pointsLastUpdatedMs : Date.now(),
+      collateralUsd: Number.isFinite(state.currentCollateralUsd) ? Math.max(0, state.currentCollateralUsd) : 0,
+    }));
+    state.pointsLastPersistMs = Date.now();
+  } catch (_) {
+    // Ignore storage write failures so UI updates continue.
+  }
+}
+
+function accruePointsNow(nowMs = Date.now()) {
+  const safeNow = Number.isFinite(nowMs) ? nowMs : Date.now();
+  const previousMs = Number.isFinite(state.pointsLastUpdatedMs) ? state.pointsLastUpdatedMs : safeNow;
+  const deltaSec = Math.max(0, (safeNow - previousMs) / 1000);
+  if (deltaSec > 0) {
+    const ratePerSec = Math.max(0, state.currentCollateralUsd || 0) / 60;
+    state.points = Math.max(0, (state.points || 0) + ratePerSec * deltaSec);
+  }
+  state.pointsLastUpdatedMs = safeNow;
+}
+
+function resetPointsView() {
+  state.currentCollateralUsd = 0;
+  state.points = 0;
+  state.pointsStorageKey = null;
+  state.pointsLastUpdatedMs = Date.now();
+  state.pointsLastPersistMs = 0;
+  renderPoints();
+}
+
+function hydratePointsForAccount() {
+  const nextKey = getPointsStorageKey();
+
+  if (state.pointsStorageKey && state.pointsStorageKey !== nextKey) {
+    persistPointsState();
+  }
+
+  if (!nextKey) {
+    resetPointsView();
+    return;
+  }
+
+  state.pointsStorageKey = nextKey;
+  state.currentCollateralUsd = 0;
+  state.points = 0;
+
+  const nowMs = Date.now();
+  try {
+    const raw = localStorage.getItem(nextKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const savedPoints = Number(parsed.points);
+      const savedCollateralUsd = Number(parsed.collateralUsd);
+      const savedLastUpdatedMs = Number(parsed.lastUpdatedMs);
+
+      state.points = Number.isFinite(savedPoints) ? Math.max(0, savedPoints) : 0;
+
+      if (
+        Number.isFinite(savedCollateralUsd) &&
+        Number.isFinite(savedLastUpdatedMs) &&
+        savedLastUpdatedMs > 0 &&
+        savedLastUpdatedMs <= nowMs
+      ) {
+        const offlineDeltaSec = (nowMs - savedLastUpdatedMs) / 1000;
+        state.points += Math.max(0, savedCollateralUsd) * (offlineDeltaSec / 60);
+      }
+    }
+  } catch (_) {
+    state.points = 0;
+  }
+
+  state.pointsLastUpdatedMs = nowMs;
+  state.pointsLastPersistMs = 0;
+  renderPoints();
+  persistPointsState();
+}
+
+function tickPoints() {
+  if (!state.account || state.chainId !== CHAIN.id) {
+    return;
+  }
+  accruePointsNow();
+  renderPoints();
+  if (Date.now() - state.pointsLastPersistMs > 10000) {
+    persistPointsState();
+  }
+}
+
+function setHealthZone(zone, label) {
+  const entries = [
+    ['safe', els.healthZoneSafe],
+    ['caution', els.healthZoneCaution],
+    ['danger', els.healthZoneDanger],
+  ];
+
+  entries.forEach(([key, element]) => {
+    if (!element) return;
+    element.classList.toggle('active', key === zone);
+  });
+
+  if (els.healthZoneLabel) {
+    els.healthZoneLabel.textContent = label;
+  }
+}
+
+function readSavingsAllocationsFromInputs() {
+  const result = {};
+  const inputs = els.savingsStrategiesBody.querySelectorAll('[data-savings-id]');
+  inputs.forEach((input) => {
+    const id = input.getAttribute('data-savings-id');
+    result[id] = sanitizeAllocationValue(input.value);
+  });
+  return result;
+}
+
+function setSavingsMetrics(allocations) {
+  const borrowed = Math.max(0, state.currentBaseBorrow || 0);
+  const allocated = SAVINGS_STRATEGIES.reduce((sum, s) => sum + (allocations[s.id] || 0), 0);
+  const unallocated = Math.max(0, borrowed - allocated);
+  const weightedApy = allocated > 0
+    ? SAVINGS_STRATEGIES.reduce((sum, s) => sum + (allocations[s.id] || 0) * s.apy, 0) / allocated
+    : 0;
+  const annualYield = allocated * weightedApy;
+  const monthlyYield = annualYield / 12;
+  const baseSymbol = getBaseSymbol();
+
+  els.savingsBaseSymbol.textContent = baseSymbol;
+  if (els.savingsAllocationSymbol) {
+    els.savingsAllocationSymbol.textContent = baseSymbol;
+  }
+  els.savingsBorrowed.textContent = `${fmtAmount(borrowed, 4)} ${baseSymbol}`;
+  els.savingsAllocated.textContent = `${fmtAmount(allocated, 4)} ${baseSymbol}`;
+  els.savingsUnallocated.textContent = `${fmtAmount(unallocated, 4)} ${baseSymbol}`;
+  els.savingsWeightedApy.textContent = `${fmtAmount(weightedApy * 100, 2)}%`;
+  els.savingsAnnualYield.textContent = `${fmtAmount(annualYield, 4)} ${baseSymbol}`;
+  els.savingsMonthlyYield.textContent = `${fmtAmount(monthlyYield, 4)} ${baseSymbol}`;
+}
+
+function renderSavingsRows() {
+  const borrowed = Math.max(0, state.currentBaseBorrow || 0);
+
+  els.savingsStrategiesBody.innerHTML = SAVINGS_STRATEGIES.map((strategy) => {
+    const amount = sanitizeAllocationValue(state.savingsAllocations[strategy.id]);
+    const share = borrowed > 0 ? (amount / borrowed) * 100 : 0;
+
+    return `
+      <tr>
+        <td><strong>${strategy.name}</strong></td>
+        <td>${strategy.asset}</td>
+        <td>${fmtAmount(strategy.apy * 100, 2)}%</td>
+        <td>
+          <input
+            class="savings-allocation-input"
+            type="number"
+            min="0"
+            step="any"
+            data-savings-id="${strategy.id}"
+            value="${amount}"
+            placeholder="0.0"
+          />
+        </td>
+        <td>${fmtAmount(share, 2)}%</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderSavings() {
+  renderSavingsRows();
+  setSavingsMetrics(state.savingsAllocations);
+}
+
+function applySavingsAllocations() {
+  const next = readSavingsAllocationsFromInputs();
+  const borrowed = Math.max(0, state.currentBaseBorrow || 0);
+  const allocated = SAVINGS_STRATEGIES.reduce((sum, s) => sum + (next[s.id] || 0), 0);
+  const baseSymbol = getBaseSymbol();
+
+  if (allocated > borrowed + 1e-9) {
+    throw new Error(`Allocation exceeds borrowed amount (${fmtAmount(borrowed, 4)} ${baseSymbol})`);
+  }
+
+  state.savingsAllocations = next;
+  saveSavingsAllocations(next);
+  renderSavings();
+  log(`Saved savings allocations (${fmtAmount(allocated, 4)} ${baseSymbol}).`);
+}
+
+function resetSavingsAllocations() {
+  state.savingsAllocations = Object.fromEntries(SAVINGS_STRATEGIES.map((s) => [s.id, 0]));
+  saveSavingsAllocations(state.savingsAllocations);
+  renderSavings();
+  log('Reset savings allocations.');
 }
 
 async function loadAliases() {
@@ -335,6 +620,7 @@ async function refreshUi() {
 
   const base = state.base;
   const account = state.account;
+  accruePointsNow();
 
   const [
     totalBorrowRaw,
@@ -344,8 +630,6 @@ async function refreshUi() {
     baseSupplyRaw,
     baseBorrowRaw,
     basePriceFeedAddress,
-    isLiquidatable,
-    isBorrowCollateralized,
   ] = await Promise.all([
     state.comet.totalBorrow(),
     state.comet.baseBorrowMin(),
@@ -354,8 +638,6 @@ async function refreshUi() {
     account ? state.comet.balanceOf(account) : ethers.constants.Zero,
     account ? state.comet.borrowBalanceOf(account) : ethers.constants.Zero,
     state.comet.baseTokenPriceFeed(),
-    account ? state.comet.isLiquidatable(account) : false,
-    account ? state.comet.isBorrowCollateralized(account) : true,
   ]);
   const basePriceRaw = await state.comet.getPrice(basePriceFeedAddress);
 
@@ -366,6 +648,7 @@ async function refreshUi() {
   const baseSupply = bnToFloat(baseSupplyRaw, base.decimals);
   const baseBorrow = bnToFloat(baseBorrowRaw, base.decimals);
   const basePrice = bnToFloat(basePriceRaw, 8);
+  state.currentBaseBorrow = baseBorrow;
 
   els.totalBorrow.textContent = `${fmtAmount(totalBorrow, 2)} ${base.symbol}`;
   els.marketCash.textContent = `${fmtAmount(marketCash, 2)} ${base.symbol}`;
@@ -418,6 +701,9 @@ async function refreshUi() {
   const baseSupplyUsd = baseSupply * basePrice;
   const baseBorrowUsd = baseBorrow * basePrice;
   const totalCollateralUsd = collateralBreakdown.reduce((sum, row) => sum + row.usd, 0);
+  state.currentCollateralUsd = account ? totalCollateralUsd : 0;
+  renderPoints();
+  persistPointsState();
 
   const borrowCapacityUsd = baseSupplyUsd + collateralBorrowPowerUsd;
   const liquidationCapacityUsd = baseSupplyUsd + collateralLiqPowerUsd;
@@ -440,6 +726,7 @@ async function refreshUi() {
     els.healthFactorBar.style.width = '0%';
     els.healthFactorBar.style.background = '#9fafaa';
     els.healthFactorMeta.textContent = 'Connect wallet';
+    setHealthZone(null, 'Connect wallet');
   } else {
     const usedPctRaw = Math.max(0, capacityUsed);
     const usedPctClamped = Math.min(usedPctRaw, 100);
@@ -454,6 +741,7 @@ async function refreshUi() {
       els.healthFactorBar.style.width = '100%';
       els.healthFactorBar.style.background = 'linear-gradient(90deg, #00c805 0%, #22d44f 100%)';
       els.healthFactorMeta.textContent = 'No active borrow';
+      setHealthZone('safe', 'Safe');
     } else {
       const hfPct = Math.max(0, Math.min((healthFactor / 2) * 100, 100));
       els.healthFactorBar.style.width = `${hfPct}%`;
@@ -462,6 +750,13 @@ async function refreshUi() {
         healthFactor < 1.1 ? 'linear-gradient(90deg, #ff574d 0%, #ff7e6f 100%)' :
         healthFactor < 1.5 ? 'linear-gradient(90deg, #f5a623 0%, #ffc857 100%)' :
         'linear-gradient(90deg, #00c805 0%, #22d44f 100%)';
+      if (healthFactor < 1.1) {
+        setHealthZone('danger', 'Danger');
+      } else if (healthFactor < 1.5) {
+        setHealthZone('caution', 'Caution');
+      } else {
+        setHealthZone('safe', 'Safe');
+      }
     }
   }
 
@@ -472,8 +767,7 @@ async function refreshUi() {
     els.liquidationThresholdNote.textContent = 'Supply collateral to establish borrow capacity.';
     els.collateralBreakdown.innerHTML = '<li class="breakdown-item"><span>No collateral supplied</span><span>-</span></li>';
   } else {
-    els.liquidationThresholdNote.textContent =
-      `At current prices, liquidation begins around ${fmtAmount(liquidationBorrowBase, 4)} ${base.symbol} borrowed (${fmtUsd(liquidationCapacityUsd)}).`;
+    els.liquidationThresholdNote.textContent = 'Liquidation begins when health factor falls below 1.00.';
     const breakdownHtml = collateralBreakdown
       .sort((a, b) => b.usd - a.usd)
       .map((row) => {
@@ -484,27 +778,7 @@ async function refreshUi() {
     els.collateralBreakdown.innerHTML = breakdownHtml;
   }
 
-  const liq = els.liquidation;
-  liq.className = 'pill';
-  if (!account) {
-    liq.classList.add('neutral');
-    liq.textContent = 'Connect wallet to calculate liquidation risk';
-  } else if (isLiquidatable || healthFactor < 1) {
-    liq.classList.add('bad');
-    liq.textContent = 'Liquidatable now';
-  } else if (!isBorrowCollateralized || healthFactor < 1.2) {
-    liq.classList.add('bad');
-    liq.textContent = 'High risk of liquidation';
-  } else if (healthFactor < 1.5) {
-    liq.classList.add('watch');
-    liq.textContent = 'Watch closely';
-  } else if (baseBorrowUsd === 0) {
-    liq.classList.add('neutral');
-    liq.textContent = 'No active borrow';
-  } else {
-    liq.classList.add('good');
-    liq.textContent = 'Healthy collateralization';
-  }
+  renderSavings();
 }
 
 function selectedAsset() {
@@ -593,6 +867,7 @@ async function connectAndLoad() {
   try {
     await loadAliases();
     await ensureWallet();
+    hydratePointsForAccount();
     setConnectedUi();
     await loadMarket();
     await refreshUi();
@@ -623,6 +898,7 @@ function wireEvents() {
   });
   els.tabDashboardBtn.addEventListener('click', () => setActiveTab('dashboard'));
   els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
+  els.tabSavingsBtn.addEventListener('click', () => setActiveTab('savings'));
 
   els.approveAssetBtn.addEventListener('click', () => approveAsset().catch((e) => log(`Approve error: ${e.message || e}`)));
   els.supplyAssetBtn.addEventListener('click', () => supplyAsset().catch((e) => log(`Supply error: ${e.message || e}`)));
@@ -631,6 +907,18 @@ function wireEvents() {
   els.approveBaseBtn.addEventListener('click', () => approveBase().catch((e) => log(`Approve base error: ${e.message || e}`)));
   els.borrowBaseBtn.addEventListener('click', () => borrowBase().catch((e) => log(`Borrow error: ${e.message || e}`)));
   els.repayBaseBtn.addEventListener('click', () => repayBase().catch((e) => log(`Repay error: ${e.message || e}`)));
+  els.savingsApplyBtn.addEventListener('click', () => {
+    try {
+      applySavingsAllocations();
+    } catch (e) {
+      log(`Savings apply error: ${e.message || e}`);
+    }
+  });
+  els.savingsResetBtn.addEventListener('click', () => resetSavingsAllocations());
+  els.savingsStrategiesBody.addEventListener('input', () => {
+    const preview = readSavingsAllocationsFromInputs();
+    setSavingsMetrics(preview);
+  });
 
   const injected = getInjectedProvider();
   if (injected && injected.on) {
@@ -643,8 +931,11 @@ async function bootstrap() {
   wireEvents();
   initializeTheme();
   setActiveTab('dashboard');
+  renderPoints();
+  state.savingsAllocations = loadSavingsAllocations();
   await loadAliases();
   setCometUi(state.aliases.comet);
+  renderSavings();
   if (!getInjectedProvider()) {
     log('No injected wallet found. In MetaMask extension, enable site access for localhost.');
   }
@@ -659,6 +950,15 @@ async function bootstrap() {
       refreshUi().catch((e) => log(`Auto-refresh error: ${e.message || e}`));
     }
   }, 30000);
+
+  setInterval(() => {
+    tickPoints();
+  }, 1000);
+
+  window.addEventListener('beforeunload', () => {
+    accruePointsNow();
+    persistPointsState();
+  });
 }
 
 bootstrap().catch((e) => {

@@ -219,6 +219,7 @@ function setCometUi(address) {
 
 function applyTheme(theme) {
   const nextTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', nextTheme);
   document.body.setAttribute('data-theme', nextTheme);
   if (els.themeToggleBtn) {
     els.themeToggleBtn.textContent = nextTheme === 'dark' ? 'Light Mode' : 'Dark Mode';

@@ -16,6 +16,13 @@ const SAVINGS_STRATEGIES = [
   { id: 'ethena_usde', name: 'Ethena Savings', asset: 'USDe', apy: 0.058 },
   { id: 'sky_usds', name: 'Sky Savings', asset: 'USDS', apy: 0.0375 },
 ];
+const ASSET_ICON_BY_SYMBOL = {
+  TSLA: './assets/ticker-tsla.svg',
+  AMZN: './assets/ticker-amzn.svg',
+  PLTR: './assets/ticker-pltr.svg',
+  NFLX: './assets/ticker-nflx.svg',
+  AMD: './assets/ticker-amd.svg',
+};
 
 const FALLBACK_ALIASES = {
   comet: '0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79',
@@ -174,6 +181,15 @@ function fmtAmount(value, decimals = 2) {
 function fmtUsd(value) {
   if (!Number.isFinite(value)) return '-';
   return `$${fmtAmount(value, 2)}`;
+}
+
+function renderAssetIdentity(asset) {
+  const symbol = (asset.symbol || 'UNKNOWN').toUpperCase();
+  const iconSrc = ASSET_ICON_BY_SYMBOL[symbol];
+  const iconHtml = iconSrc
+    ? `<img class="asset-icon" src="${iconSrc}" alt="${symbol} icon" loading="lazy" />`
+    : `<span class="asset-icon-fallback" aria-hidden="true">${symbol.slice(0, 3)}</span>`;
+  return `<div class="asset-cell">${iconHtml}<div class="asset-meta"><strong>${asset.symbol}</strong><br/><span class="mono">${shortenAddress(asset.address)}</span></div></div>`;
 }
 
 function bnToFloat(value, decimals) {
@@ -907,7 +923,7 @@ async function refreshUi() {
 
     rowHtml.push(`
       <tr>
-        <td><strong>${market.symbol}</strong><br/><span class="mono">${shortenAddress(market.address)}</span></td>
+        <td>${renderAssetIdentity(market)}</td>
         <td>${fmtUsd(livePriceUsd)}</td>
         <td>${walletBalanceLabel}</td>
         <td>${fmtAmount(posted, 4)} ${market.symbol}</td>

@@ -49,6 +49,7 @@ import roninRelationConfigMap from './deployments/ronin/weth/relations';
 import roninWronRelationConfigMap from './deployments/ronin/wron/relations';
 import lineaUsdcRelationConfigMap from './deployments/linea/usdc/relations';
 import lineaWethRelationConfigMap from './deployments/linea/weth/relations';
+import robinhoodStocksRelationConfigMap from './deployments/robinhood/stocks/relations';
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   for (const account of await hre.ethers.getSigners()) console.log(account.address);
@@ -75,6 +76,7 @@ const {
   ARBITRUM_QUICKNODE_LINK,
   UNICHAIN_QUICKNODE_LINK = '',
   LINEA_QUICKNODE_LINK = '',
+  ROBINHOOD_RPC_LINK = 'https://rpc.testnet.chain.robinhood.com',
   _TENDERLY_KEY_RONIN,
   _TENDERLY_KEY_POLYGON,
   MNEMONIC = 'myth like woof scare over problem client lizard pioneer submit female collect',
@@ -184,6 +186,11 @@ export const networkConfigs: NetworkConfig[] = [
     network: 'arbitrum',
     chainId: 42161,
     url: `${ARBITRUM_QUICKNODE_LINK}`,
+  },
+  {
+    network: 'robinhood',
+    chainId: 46630,
+    url: `${ROBINHOOD_RPC_LINK}`,
   },
   {
     network: 'avalanche',
@@ -384,6 +391,7 @@ const config: HardhatUserConfig = {
       // Scroll
       'scroll': ETHERSCAN_KEY,
       linea: ETHERSCAN_KEY_FOR_LINEA,
+      robinhood: ETHERSCAN_KEY,
     },
     customChains: [
       {
@@ -448,6 +456,14 @@ const config: HardhatUserConfig = {
           apiURL: 'https://explorer-kintsugi.roninchain.com/v2/2020',
           browserURL: 'https://app.roninchain.com'
         }
+      },
+      {
+        network: 'robinhood',
+        chainId: 46630,
+        urls: {
+          apiURL: 'https://explorer.testnet.chain.robinhood.com/api',
+          browserURL: 'https://explorer.testnet.chain.robinhood.com/'
+        }
       }
     ]
   },
@@ -511,6 +527,9 @@ const config: HardhatUserConfig = {
       'linea': {
         usdc: lineaUsdcRelationConfigMap,
         weth: lineaWethRelationConfigMap
+      },
+      'robinhood': {
+        stocks: robinhoodStocksRelationConfigMap
       },
     },
   },
@@ -699,6 +718,11 @@ const config: HardhatUserConfig = {
         network: 'ronin',
         deployment: 'wron',
         auxiliaryBase: 'mainnet'
+      },
+      {
+        name: 'robinhood-stocks',
+        network: 'robinhood',
+        deployment: 'stocks'
       },
     ],
   },

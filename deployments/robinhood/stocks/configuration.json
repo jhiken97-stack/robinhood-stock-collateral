@@ -1,0 +1,34 @@
+{
+  "name": "Compound Robinhood Stocks",
+  "symbol": "cRUSDv3",
+  "baseToken": "rUSD",
+  "borrowMin": "10e6",
+  "storeFrontPriceFactor": 0.6,
+  "targetReserves": "500000e6",
+  "rates": {
+    "supplyKink": 0.85,
+    "supplySlopeLow": 0.04,
+    "supplySlopeHigh": 1.2,
+    "supplyBase": 0,
+    "borrowKink": 0.85,
+    "borrowSlopeLow": 0.06,
+    "borrowSlopeHigh": 1.6,
+    "borrowBase": 0.02
+  },
+  "tracking": {
+    "indexScale": "1e15",
+    "baseSupplySpeed": "0e15",
+    "baseBorrowSpeed": "0e15",
+    "baseMinForRewards": "100e6"
+  },
+  "rewardToken": "COMP",
+  "assets": {
+    "AAPL": {
+      "decimals": "18",
+      "borrowCF": 0.45,
+      "liquidateCF": 0.6,
+      "liquidationFactor": 0.92,
+      "supplyCap": "100000e18"
+    }
+  }
+}

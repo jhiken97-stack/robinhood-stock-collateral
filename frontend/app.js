@@ -26,7 +26,7 @@ const COMET_ABI = [
   'function totalSupply() view returns (uint256)',
   'function totalBorrow() view returns (uint256)',
   'function getReserves() view returns (int256)',
-  'function getCollateralReserves(address) view returns (uint256)',
+  'function totalsCollateral(address) view returns (uint128 totalSupplyAsset, uint128 _reserved)',
   'function isLiquidatable(address) view returns (bool)',
   'function isBorrowCollateralized(address) view returns (bool)',
   'function baseBorrowMin() view returns (uint104)',
@@ -285,10 +285,7 @@ async function loadMarket() {
       // Keep fallback symbol/decimals if token metadata is inaccessible.
     }
 
-    const [priceRaw, collateralReserves] = await Promise.all([
-      state.comet.getPrice(info.priceFeed),
-      state.comet.getCollateralReserves(info.asset),
-    ]);
+    const priceRaw = await state.comet.getPrice(info.priceFeed);
 
     const priceUsd = bnToFloat(priceRaw, 8);
 
@@ -301,7 +298,6 @@ async function loadMarket() {
       supplyCap: bnToFloat(info.supplyCap, decimals),
       borrowCF: bnToFloat(info.borrowCollateralFactor, 18),
       liquidateCF: bnToFloat(info.liquidateCollateralFactor, 18),
-      collateralReserves: bnToFloat(collateralReserves, decimals),
     });
   }
 
@@ -366,15 +362,16 @@ async function refreshUi() {
 
   for (const market of state.collaterals) {
     const token = new ethers.Contract(market.address, ERC20_ABI, state.signer || state.provider);
-    const [postedRaw, collateralReservesRaw, priceRaw, walletBalanceRaw] = await Promise.all([
+    const [postedRaw, totalsRaw, priceRaw, walletBalanceRaw] = await Promise.all([
       account ? state.comet.collateralBalanceOf(account, market.address) : ethers.constants.Zero,
-      state.comet.getCollateralReserves(market.address),
+      state.comet.totalsCollateral(market.address),
       state.comet.getPrice(market.priceFeed),
       account ? token.balanceOf(account) : ethers.constants.Zero,
     ]);
 
     const livePriceUsd = bnToFloat(priceRaw, 8);
-    const collateralReserves = bnToFloat(collateralReservesRaw, market.decimals);
+    const totalSuppliedRaw = totalsRaw.totalSupplyAsset ?? totalsRaw[0];
+    const totalSupplied = bnToFloat(totalSuppliedRaw, market.decimals);
     const walletBalance = bnToFloat(walletBalanceRaw, market.decimals);
     const walletBalanceLabel = account ? `${fmtAmount(walletBalance, 4)} ${market.symbol}` : '-';
     const posted = bnToFloat(postedRaw, market.decimals);
@@ -391,7 +388,7 @@ async function refreshUi() {
         <td>${fmtUsd(livePriceUsd)}</td>
         <td>${walletBalanceLabel}</td>
         <td>${fmtAmount(posted, 4)} ${market.symbol}</td>
-        <td>${fmtAmount(collateralReserves, 2)} ${market.symbol}</td>
+        <td>${fmtAmount(totalSupplied, 2)} ${market.symbol}</td>
         <td>${fmtAmount(market.supplyCap, 2)} ${market.symbol}</td>
         <td>${(market.borrowCF * 100).toFixed(2)}%</td>
         <td>${(market.liquidateCF * 100).toFixed(2)}%</td>

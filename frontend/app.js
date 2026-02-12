@@ -40,6 +40,10 @@ const COMET_ABI = [
   'function withdraw(address,uint256)',
 ];
 
+const FAUCETEER_ABI = [
+  'function drip(address token)',
+];
+
 const ERC20_ABI = [
   'function symbol() view returns (string)',
   'function name() view returns (string)',
@@ -92,11 +96,18 @@ const els = {
   healthZoneCaution: document.getElementById('health-zone-caution'),
   healthZoneDanger: document.getElementById('health-zone-danger'),
   tabDashboardBtn: document.getElementById('tab-dashboard-btn'),
+  tabHowtoBtn: document.getElementById('tab-howto-btn'),
   tabMarketsBtn: document.getElementById('tab-markets-btn'),
   tabSavingsBtn: document.getElementById('tab-savings-btn'),
   panelDashboard: document.getElementById('panel-dashboard'),
+  panelHowto: document.getElementById('panel-howto'),
   panelMarkets: document.getElementById('panel-markets'),
   panelSavings: document.getElementById('panel-savings'),
+  howtoAddNetworkBtn: document.getElementById('howto-add-network-btn'),
+  howtoFaucetTokenSelect: document.getElementById('howto-faucet-token-select'),
+  howtoClaimTokenBtn: document.getElementById('howto-claim-token-btn'),
+  howtoFauceteerLink: document.getElementById('howto-fauceteer-link'),
+  howtoFauceteerAddress: document.getElementById('howto-fauceteer-address'),
   savingsBaseSymbol: document.getElementById('savings-base-symbol'),
   savingsAllocationSymbol: document.getElementById('savings-allocation-symbol'),
   savingsBorrowed: document.getElementById('savings-borrowed'),
@@ -185,6 +196,10 @@ function setActiveTab(panel) {
       panel: els.panelDashboard,
       button: els.tabDashboardBtn,
     },
+    howto: {
+      panel: els.panelHowto,
+      button: els.tabHowtoBtn,
+    },
     markets: {
       panel: els.panelMarkets,
       button: els.tabMarketsBtn,
@@ -264,6 +279,65 @@ function saveSavingsAllocations(allocations) {
 
 function getBaseSymbol() {
   return state.base?.symbol || 'rUSD';
+}
+
+function buildFaucetTokenOptions() {
+  const out = [];
+  const seen = new Set();
+  const push = (symbol, address) => {
+    if (!address) return;
+    let normalized;
+    try {
+      normalized = ethers.utils.getAddress(address);
+    } catch (_) {
+      return;
+    }
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ symbol, address: normalized });
+  };
+
+  if (state.base?.address) {
+    push(state.base.symbol || 'Base', state.base.address);
+  }
+  for (const market of state.collaterals) {
+    push(market.symbol || 'Token', market.address);
+  }
+
+  if (out.length === 0) {
+    for (const alias of ['rUSD', 'TSLA', 'AMZN', 'PLTR', 'NFLX', 'AMD', 'AAPL']) {
+      push(alias, state.aliases[alias]);
+    }
+  }
+
+  return out;
+}
+
+function renderHowTo() {
+  const fauceteerAddress = state.aliases?.fauceteer;
+  if (els.howtoFauceteerAddress) {
+    els.howtoFauceteerAddress.textContent = fauceteerAddress || '-';
+  }
+  if (els.howtoFauceteerLink) {
+    els.howtoFauceteerLink.href = fauceteerAddress
+      ? `${CHAIN.explorer}/address/${fauceteerAddress}`
+      : CHAIN.explorer;
+  }
+
+  const options = buildFaucetTokenOptions();
+  if (els.howtoFaucetTokenSelect) {
+    if (options.length === 0) {
+      els.howtoFaucetTokenSelect.innerHTML = '<option value="">No faucet tokens available</option>';
+    } else {
+      els.howtoFaucetTokenSelect.innerHTML = options
+        .map((item) => `<option value="${item.address}">${item.symbol} (${shortenAddress(item.address)})</option>`)
+        .join('');
+    }
+  }
+  if (els.howtoClaimTokenBtn) {
+    els.howtoClaimTokenBtn.disabled = options.length === 0;
+  }
 }
 
 function getPointsStorageKey() {
@@ -555,6 +629,33 @@ async function switchToRobinhood() {
   }
 }
 
+async function addOrSwitchNetworkFromHowTo() {
+  const injected = getInjectedProvider();
+  if (!injected) {
+    throw new Error('MetaMask not detected. Install MetaMask to add Robinhood testnet.');
+  }
+  state.injected = injected;
+  if (!state.provider) {
+    state.provider = new ethers.providers.Web3Provider(injected, 'any');
+  }
+  await switchToRobinhood();
+  const network = await state.provider.getNetwork();
+  state.chainId = network.chainId;
+  setConnectedUi();
+  log('Robinhood testnet added/switched in wallet.');
+}
+
+async function claimFaucetToken() {
+  requireConnected();
+  const tokenAddress = els.howtoFaucetTokenSelect?.value;
+  if (!tokenAddress) throw new Error('Select a faucet token');
+  if (!state.aliases?.fauceteer) throw new Error('Fauceteer address not found in aliases');
+
+  const label = els.howtoFaucetTokenSelect.selectedOptions?.[0]?.textContent?.split(' ')[0] || 'token';
+  const fauceteer = new ethers.Contract(state.aliases.fauceteer, FAUCETEER_ABI, state.signer);
+  await runTx(`Claim ${label}`, fauceteer.drip(tokenAddress));
+}
+
 async function loadMarket() {
   state.comet = new ethers.Contract(state.aliases.comet, COMET_ABI, state.signer || state.provider);
 
@@ -607,6 +708,7 @@ async function loadMarket() {
   state.collaterals = assets;
   setCometUi(state.aliases.comet);
   renderAssetSelect();
+  renderHowTo();
 }
 
 function renderAssetSelect() {
@@ -898,8 +1000,11 @@ function wireEvents() {
     }
   });
   els.tabDashboardBtn.addEventListener('click', () => setActiveTab('dashboard'));
+  els.tabHowtoBtn.addEventListener('click', () => setActiveTab('howto'));
   els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
   els.tabSavingsBtn.addEventListener('click', () => setActiveTab('savings'));
+  els.howtoAddNetworkBtn.addEventListener('click', () => addOrSwitchNetworkFromHowTo().catch((e) => log(`Network setup error: ${e.message || e}`)));
+  els.howtoClaimTokenBtn.addEventListener('click', () => claimFaucetToken().catch((e) => log(`Faucet error: ${e.message || e}`)));
 
   els.approveAssetBtn.addEventListener('click', () => approveAsset().catch((e) => log(`Approve error: ${e.message || e}`)));
   els.supplyAssetBtn.addEventListener('click', () => supplyAsset().catch((e) => log(`Supply error: ${e.message || e}`)));
@@ -936,6 +1041,7 @@ async function bootstrap() {
   state.savingsAllocations = loadSavingsAllocations();
   await loadAliases();
   setCometUi(state.aliases.comet);
+  renderHowTo();
   renderSavings();
   if (!getInjectedProvider()) {
     log('No injected wallet found. In MetaMask extension, enable site access for localhost.');

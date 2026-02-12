@@ -59,6 +59,7 @@
 
       <section class="tabs reveal">
         <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>
+        <button id="tab-howto-btn" class="tab-btn" data-panel="howto">How To Use</button>
         <button id="tab-markets-btn" class="tab-btn" data-panel="markets">All Markets</button>
         <button id="tab-savings-btn" class="tab-btn" data-panel="savings">Savings</button>
       </section>
@@ -215,6 +216,64 @@
             </div>
           </div>
         </details>
+      </section>
+
+      <section id="panel-howto" class="tab-panel">
+        <section class="grid howto-grid reveal">
+          <article class="card howto-step">
+            <h2>1) Add Robinhood Testnet</h2>
+            <p class="hint">
+              Add the network to your wallet to interact with this protocol.
+            </p>
+            <ul class="howto-kv">
+              <li><span>Network</span><strong>Robinhood Chain Testnet</strong></li>
+              <li><span>Chain ID</span><strong>46630</strong></li>
+              <li><span>RPC</span><strong class="mono">https://rpc.testnet.chain.robinhood.com</strong></li>
+              <li><span>Currency</span><strong>ETH</strong></li>
+              <li><span>Explorer</span><strong class="mono">explorer.testnet.chain.robinhood.com</strong></li>
+            </ul>
+            <div class="btn-row">
+              <button id="howto-add-network-btn" class="btn">Add/Switch Network</button>
+              <a class="btn ghost" href="https://docs.robinhood.com/chain/add-network-to-wallet/" target="_blank" rel="noreferrer">Network Docs</a>
+            </div>
+          </article>
+
+          <article class="card howto-step">
+            <h2>2) Get Testnet ETH</h2>
+            <p class="hint">
+              Use Robinhood&apos;s public faucet to request testnet ETH for gas.
+            </p>
+            <div class="btn-row">
+              <a id="howto-eth-faucet-link" class="btn" href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer">Open ETH Faucet</a>
+            </div>
+            <p class="hint fine-print">
+              Faucet requests may be rate-limited.
+            </p>
+          </article>
+
+          <article class="card howto-step">
+            <h2>3) Claim Test Stock Tokens</h2>
+            <p class="hint">
+              Connect wallet, pick a token, and claim from the onchain faucet contract.
+            </p>
+            <div class="form-grid">
+              <label>
+                <span>Faucet Token</span>
+                <select id="howto-faucet-token-select"></select>
+              </label>
+            </div>
+            <div class="btn-row">
+              <button id="howto-claim-token-btn" class="btn">Claim Token</button>
+              <a id="howto-fauceteer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Fauceteer</a>
+            </div>
+            <p class="hint fine-print">
+              Faucet address: <span id="howto-fauceteer-address" class="mono">-</span>
+            </p>
+            <p class="hint fine-print">
+              Each token can be claimed once per 24 hours per wallet.
+            </p>
+          </article>
+        </section>
       </section>
 
       <section id="panel-markets" class="tab-panel">

@@ -323,14 +323,18 @@ async function refreshUi() {
   const rowHtml = [];
 
   for (const market of state.collaterals) {
-    const [postedRaw, collateralReservesRaw, priceRaw] = await Promise.all([
+    const token = new ethers.Contract(market.address, ERC20_ABI, state.signer || state.provider);
+    const [postedRaw, collateralReservesRaw, priceRaw, walletBalanceRaw] = await Promise.all([
       account ? state.comet.collateralBalanceOf(account, market.address) : ethers.constants.Zero,
       state.comet.getCollateralReserves(market.address),
       state.comet.getPrice(market.priceFeed),
+      account ? token.balanceOf(account) : ethers.constants.Zero,
     ]);
 
     const livePriceUsd = bnToFloat(priceRaw, 8);
     const collateralReserves = bnToFloat(collateralReservesRaw, market.decimals);
+    const walletBalance = bnToFloat(walletBalanceRaw, market.decimals);
+    const walletBalanceLabel = account ? `${fmtAmount(walletBalance, 4)} ${market.symbol}` : '-';
     const posted = bnToFloat(postedRaw, market.decimals);
     const postedUsd = posted * livePriceUsd;
     collateralBorrowPowerUsd += postedUsd * market.borrowCF;
@@ -340,6 +344,7 @@ async function refreshUi() {
       <tr>
         <td><strong>${market.symbol}</strong><br/><span class="mono">${shortenAddress(market.address)}</span></td>
         <td>${fmtUsd(livePriceUsd)}</td>
+        <td>${walletBalanceLabel}</td>
         <td>${fmtAmount(posted, 4)} ${market.symbol}</td>
         <td>${fmtAmount(collateralReserves, 2)} ${market.symbol}</td>
         <td>${fmtAmount(market.supplyCap, 2)} ${market.symbol}</td>
@@ -349,7 +354,7 @@ async function refreshUi() {
     `);
   }
 
-  els.marketsBody.innerHTML = rowHtml.join('') || '<tr><td colspan="7">No collateral assets found.</td></tr>';
+  els.marketsBody.innerHTML = rowHtml.join('') || '<tr><td colspan="8">No collateral assets found.</td></tr>';
 
   const baseSupplyUsd = baseSupply * basePrice;
   const baseBorrowUsd = baseBorrow * basePrice;

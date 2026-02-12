@@ -6,6 +6,7 @@ const CHAIN = {
   explorer: 'https://explorer.testnet.chain.robinhood.com',
   nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
 };
+const THEME_KEY = 'robinhood-ui-theme';
 
 const FALLBACK_ALIASES = {
   comet: '0x7C5EE3f540A163947B32D178B3C9A83a65ED6E79',
@@ -73,6 +74,11 @@ const els = {
   repayBaseBtn: document.getElementById('repay-base-btn'),
   marketsBody: document.getElementById('markets-body'),
   txLog: document.getElementById('tx-log'),
+  themeToggleBtn: document.getElementById('theme-toggle-btn'),
+  borrowCapacityBar: document.getElementById('borrow-capacity-bar'),
+  borrowCapacityMeta: document.getElementById('borrow-capacity-meta'),
+  healthFactorBar: document.getElementById('health-factor-bar'),
+  healthFactorMeta: document.getElementById('health-factor-meta'),
   tabDashboardBtn: document.getElementById('tab-dashboard-btn'),
   tabMarketsBtn: document.getElementById('tab-markets-btn'),
   panelDashboard: document.getElementById('panel-dashboard'),
@@ -147,6 +153,25 @@ function setActiveTab(panel) {
   els.panelMarkets.classList.toggle('active', !dashboard);
   els.tabDashboardBtn.classList.toggle('active', dashboard);
   els.tabMarketsBtn.classList.toggle('active', !dashboard);
+}
+
+function applyTheme(theme) {
+  const nextTheme = theme === 'dark' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', nextTheme);
+  if (els.themeToggleBtn) {
+    els.themeToggleBtn.textContent = nextTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  }
+  localStorage.setItem(THEME_KEY, nextTheme);
+}
+
+function initializeTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === 'dark' || saved === 'light') {
+    applyTheme(saved);
+    return;
+  }
+  const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(preferDark ? 'dark' : 'light');
 }
 
 async function loadAliases() {
@@ -395,6 +420,38 @@ async function refreshUi() {
   els.liquidationTrigger.textContent = '1.00';
 
   if (!account) {
+    els.borrowCapacityBar.style.width = '0%';
+    els.borrowCapacityBar.style.background = '#9fafaa';
+    els.borrowCapacityMeta.textContent = 'Connect wallet';
+    els.healthFactorBar.style.width = '0%';
+    els.healthFactorBar.style.background = '#9fafaa';
+    els.healthFactorMeta.textContent = 'Connect wallet';
+  } else {
+    const usedPctRaw = Math.max(0, capacityUsed);
+    const usedPctClamped = Math.min(usedPctRaw, 100);
+    els.borrowCapacityBar.style.width = `${usedPctClamped}%`;
+    els.borrowCapacityMeta.textContent = `${fmtAmount(usedPctRaw, 2)}% used`;
+    els.borrowCapacityBar.style.background =
+      usedPctRaw < 65 ? 'linear-gradient(90deg, #00c805 0%, #22d44f 100%)' :
+      usedPctRaw < 85 ? 'linear-gradient(90deg, #f5a623 0%, #ffc857 100%)' :
+      'linear-gradient(90deg, #ff574d 0%, #ff7e6f 100%)';
+
+    if (!Number.isFinite(healthFactor)) {
+      els.healthFactorBar.style.width = '100%';
+      els.healthFactorBar.style.background = 'linear-gradient(90deg, #00c805 0%, #22d44f 100%)';
+      els.healthFactorMeta.textContent = 'No active borrow';
+    } else {
+      const hfPct = Math.max(0, Math.min((healthFactor / 2) * 100, 100));
+      els.healthFactorBar.style.width = `${hfPct}%`;
+      els.healthFactorMeta.textContent = `HF ${fmtAmount(healthFactor, 3)}`;
+      els.healthFactorBar.style.background =
+        healthFactor < 1.1 ? 'linear-gradient(90deg, #ff574d 0%, #ff7e6f 100%)' :
+        healthFactor < 1.5 ? 'linear-gradient(90deg, #f5a623 0%, #ffc857 100%)' :
+        'linear-gradient(90deg, #00c805 0%, #22d44f 100%)';
+    }
+  }
+
+  if (!account) {
     els.liquidationThresholdNote.textContent = 'Liquidation begins when health factor falls below 1.00.';
     els.collateralBreakdown.innerHTML = '<li class="breakdown-item"><span>Connect wallet</span><span>-</span></li>';
   } else if (totalCollateralUsd <= 0) {
@@ -538,6 +595,10 @@ async function connectAndLoad() {
 function wireEvents() {
   els.connectBtn.addEventListener('click', () => connectAndLoad().catch(() => {}));
   els.refreshBtn.addEventListener('click', () => refreshUi().catch((e) => log(`Refresh error: ${e.message || e}`)));
+  els.themeToggleBtn.addEventListener('click', () => {
+    const current = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
   els.tabDashboardBtn.addEventListener('click', () => setActiveTab('dashboard'));
   els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
 
@@ -558,6 +619,7 @@ function wireEvents() {
 
 async function bootstrap() {
   wireEvents();
+  initializeTheme();
   setActiveTab('dashboard');
   await loadAliases();
   els.cometAddress.textContent = `${shortenAddress(state.aliases.comet)} (${state.aliases.comet})`;

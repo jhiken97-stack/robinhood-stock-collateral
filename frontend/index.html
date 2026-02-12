@@ -22,6 +22,7 @@
           <p class="subhead">Compound v3 market dashboard for supply, borrow, and risk monitoring.</p>
         </div>
         <div class="actions-row">
+          <button id="theme-toggle-btn" class="btn ghost">Dark Mode</button>
           <button id="refresh-btn" class="btn ghost">Refresh</button>
           <button id="connect-btn" class="btn">Connect Wallet</button>
         </div>
@@ -94,6 +95,26 @@
               <div>
                 <span>Liquidation Trigger HF</span>
                 <strong id="position-liquidation-trigger">1.00</strong>
+              </div>
+            </div>
+            <div class="bar-block">
+              <div class="bar-row">
+                <div class="bar-head">
+                  <span>Borrow Capacity</span>
+                  <strong id="borrow-capacity-meta">-</strong>
+                </div>
+                <div class="bar-track">
+                  <div id="borrow-capacity-bar" class="bar-fill"></div>
+                </div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-head">
+                  <span>Health Factor</span>
+                  <strong id="health-factor-meta">-</strong>
+                </div>
+                <div class="bar-track">
+                  <div id="health-factor-bar" class="bar-fill"></div>
+                </div>
               </div>
             </div>
             <p id="liquidation-threshold-note" class="hint">Liquidation begins when health factor falls below 1.00.</p>

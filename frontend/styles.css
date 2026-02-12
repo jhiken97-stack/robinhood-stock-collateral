@@ -165,10 +165,12 @@ h2 {
   align-self: stretch;
   align-content: space-between;
   min-height: 98px;
+  flex-shrink: 0;
 }
 
 .topbar-actions .actions-row {
   justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
 .points-pill {
@@ -486,48 +488,31 @@ body[data-theme='dark'] .terms-callout {
   gap: 12px;
 }
 
-.howto-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.howto-guide {
   margin-bottom: 12px;
 }
 
-.howto-step:last-child {
-  grid-column: 1 / -1;
-}
-
-.howto-step h2 {
-  font-size: 1.1rem;
-}
-
-.howto-kv {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0;
+.howto-list {
+  margin: 14px 0 0;
+  padding-left: 22px;
   display: grid;
-  gap: 8px;
-}
-
-.howto-kv li {
-  display: flex;
-  justify-content: space-between;
   gap: 10px;
-  align-items: baseline;
-  border-bottom: 1px dashed var(--border);
-  padding-bottom: 6px;
 }
 
-.howto-kv li span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 700;
+.howto-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 10px 12px;
 }
 
-.howto-kv li strong {
-  font-size: 0.9rem;
-  text-align: right;
-  overflow-wrap: anywhere;
+.howto-item h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.howto-item .hint {
+  margin-top: 0;
 }
 
 .stats {
@@ -950,7 +935,6 @@ body[data-theme='dark'] pre {
 
 @media (max-width: 980px) {
   .network-bar,
-  .howto-grid,
   .stats,
   .savings-stats,
   .two,
@@ -978,6 +962,7 @@ body[data-theme='dark'] pre {
 
   .topbar-actions .actions-row {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .brand-wrap {

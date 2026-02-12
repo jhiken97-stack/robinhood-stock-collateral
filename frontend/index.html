@@ -219,60 +219,64 @@
       </section>
 
       <section id="panel-howto" class="tab-panel">
-        <section class="grid howto-grid reveal">
-          <article class="card howto-step">
-            <h2>1) Add Robinhood Testnet</h2>
-            <p class="hint">
-              Add the network to your wallet to interact with this protocol.
-            </p>
-            <ul class="howto-kv">
-              <li><span>Network</span><strong>Robinhood Chain Testnet</strong></li>
-              <li><span>Chain ID</span><strong>46630</strong></li>
-              <li><span>RPC</span><strong class="mono">https://rpc.testnet.chain.robinhood.com</strong></li>
-              <li><span>Currency</span><strong>ETH</strong></li>
-              <li><span>Explorer</span><strong class="mono">explorer.testnet.chain.robinhood.com</strong></li>
-            </ul>
-            <div class="btn-row">
-              <button id="howto-add-network-btn" class="btn">Add/Switch Network</button>
-              <a class="btn ghost" href="https://docs.robinhood.com/chain/add-network-to-wallet/" target="_blank" rel="noreferrer">Network Docs</a>
-            </div>
-          </article>
+        <section class="card howto-guide reveal">
+          <h2>Step-by-Step Guide</h2>
+          <p class="hint">Follow these steps to get funded, supply collateral, borrow rUSD, and allocate into savings.</p>
 
-          <article class="card howto-step">
-            <h2>2) Get Testnet ETH</h2>
-            <p class="hint">
-              Use Robinhood&apos;s public faucet to request testnet ETH for gas.
-            </p>
-            <div class="btn-row">
-              <a id="howto-eth-faucet-link" class="btn" href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer">Open ETH Faucet</a>
-            </div>
-            <p class="hint fine-print">
-              Faucet requests may be rate-limited.
-            </p>
-          </article>
+          <ol class="howto-list">
+            <li class="howto-item">
+              <h3>Add Robinhood Testnet to Wallet</h3>
+              <p class="hint">Use one click below, or add manually with Chain ID <strong>46630</strong> and RPC <span class="mono">https://rpc.testnet.chain.robinhood.com</span>.</p>
+              <div class="btn-row">
+                <button id="howto-add-network-btn" class="btn">Add/Switch Network</button>
+                <a class="btn ghost" href="https://docs.robinhood.com/chain/add-network-to-wallet/" target="_blank" rel="noreferrer">Network Docs</a>
+              </div>
+            </li>
 
-          <article class="card howto-step">
-            <h2>3) Claim Test Stock Tokens</h2>
-            <p class="hint">
-              Connect wallet, pick a token, and claim from the onchain faucet contract.
-            </p>
-            <div class="form-grid">
-              <label>
-                <span>Faucet Token</span>
-                <select id="howto-faucet-token-select"></select>
-              </label>
-            </div>
-            <div class="btn-row">
-              <button id="howto-claim-token-btn" class="btn">Claim Token</button>
-              <a id="howto-fauceteer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Fauceteer</a>
-            </div>
-            <p class="hint fine-print">
-              Faucet address: <span id="howto-fauceteer-address" class="mono">-</span>
-            </p>
-            <p class="hint fine-print">
-              Each token can be claimed once per 24 hours per wallet.
-            </p>
-          </article>
+            <li class="howto-item">
+              <h3>Claim Testnet ETH for Gas</h3>
+              <p class="hint">Open Robinhood&apos;s faucet and request ETH to your connected wallet.</p>
+              <div class="btn-row">
+                <a id="howto-eth-faucet-link" class="btn" href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer">Open ETH Faucet</a>
+              </div>
+            </li>
+
+            <li class="howto-item">
+              <h3>Claim rUSD + Stock Tokens</h3>
+              <p class="hint">Select a token and claim from the onchain faucet contract (1 claim per token every 24h).</p>
+              <div class="form-grid">
+                <label>
+                  <span>Faucet Token</span>
+                  <select id="howto-faucet-token-select"></select>
+                </label>
+              </div>
+              <div class="btn-row">
+                <button id="howto-claim-token-btn" class="btn">Claim Token</button>
+                <a id="howto-fauceteer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Fauceteer</a>
+              </div>
+              <p class="hint fine-print">Faucet address: <span id="howto-fauceteer-address" class="mono">-</span></p>
+            </li>
+
+            <li class="howto-item">
+              <h3>Supply Stock Tokens as Collateral</h3>
+              <p class="hint">Go to <strong>Dashboard</strong> tab. In <strong>Actions → Collateral</strong>, choose token, click <strong>Approve</strong>, then <strong>Supply</strong>.</p>
+            </li>
+
+            <li class="howto-item">
+              <h3>Borrow rUSD</h3>
+              <p class="hint">In <strong>Actions → Base</strong>, enter amount and click <strong>Borrow Base</strong>. Keep health factor above liquidation zone.</p>
+            </li>
+
+            <li class="howto-item">
+              <h3>Verify Position + Risk</h3>
+              <p class="hint">Check <strong>Your Position</strong> for collateral posted, borrowed amount, health factor, and risk zone.</p>
+            </li>
+
+            <li class="howto-item">
+              <h3>Allocate Borrowed rUSD into Savings</h3>
+              <p class="hint">Open <strong>Savings</strong> tab, set allocation amounts, and click <strong>Apply Allocations</strong>. This is a simulated strategy flow on testnet.</p>
+            </li>
+          </ol>
         </section>
       </section>
 

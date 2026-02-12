@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robinhood Stocks Lending Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <main class="app shell reveal">
+      <header class="topbar">
+        <div>
+          <p class="kicker">Robinhood Testnet</p>
+          <h1>Stock Collateral Lending</h1>
+          <p class="subhead">Compound v3 market dashboard for supply, borrow, and risk monitoring.</p>
+        </div>
+        <div class="actions-row">
+          <button id="refresh-btn" class="btn ghost">Refresh</button>
+          <button id="connect-btn" class="btn">Connect Wallet</button>
+        </div>
+      </header>
+
+      <section class="network-bar reveal">
+        <div>
+          <span class="label">Wallet</span>
+          <span id="wallet-address" class="value">Not connected</span>
+        </div>
+        <div>
+          <span class="label">Network</span>
+          <span id="network-status" class="value warning">Not connected</span>
+        </div>
+        <div>
+          <span class="label">Comet</span>
+          <span id="comet-address" class="value mono">Loading...</span>
+        </div>
+      </section>
+
+      <section class="grid stats reveal">
+        <article class="card stat">
+          <h3>Total Borrow</h3>
+          <p id="total-borrow">-</p>
+        </article>
+        <article class="card stat">
+          <h3>Market Cash</h3>
+          <p id="market-cash">-</p>
+        </article>
+        <article class="card stat">
+          <h3>Base Borrow Min</h3>
+          <p id="borrow-min">-</p>
+        </article>
+        <article class="card stat">
+          <h3>Protocol Reserves</h3>
+          <p id="reserves">-</p>
+        </article>
+      </section>
+
+      <section class="grid two reveal">
+        <article class="card">
+          <h2>Your Position</h2>
+          <div class="metrics">
+            <div>
+              <span>Base Supplied</span>
+              <strong id="position-base-supply">-</strong>
+            </div>
+            <div>
+              <span>Base Borrowed</span>
+              <strong id="position-base-borrow">-</strong>
+            </div>
+            <div>
+              <span>Borrow Capacity Used</span>
+              <strong id="position-capacity-used">-</strong>
+            </div>
+            <div>
+              <span>Health Factor</span>
+              <strong id="position-health">-</strong>
+            </div>
+          </div>
+          <div id="liquidation-indicator" class="pill neutral">No data</div>
+        </article>
+
+        <article class="card">
+          <h2>Actions</h2>
+          <div class="form-grid">
+            <label>
+              <span>Asset</span>
+              <select id="asset-select"></select>
+            </label>
+            <label>
+              <span>Amount</span>
+              <input id="asset-amount" type="number" min="0" step="any" placeholder="0.0" />
+            </label>
+          </div>
+          <div class="btn-row">
+            <button id="approve-asset-btn" class="btn ghost">Approve</button>
+            <button id="supply-asset-btn" class="btn">Supply</button>
+            <button id="withdraw-asset-btn" class="btn danger">Withdraw</button>
+          </div>
+
+          <hr />
+
+          <div class="form-grid">
+            <label>
+              <span>Borrow/Repay Base Amount</span>
+              <input id="base-amount" type="number" min="0" step="any" placeholder="0.0" />
+            </label>
+          </div>
+          <div class="btn-row">
+            <button id="approve-base-btn" class="btn ghost">Approve Base</button>
+            <button id="borrow-base-btn" class="btn">Borrow Base</button>
+            <button id="repay-base-btn" class="btn danger">Repay Base</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="card reveal">
+        <h2>All Markets</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Price (USD)</th>
+                <th>Your Collateral Posted</th>
+                <th>Protocol Collateral Posted</th>
+                <th>Supply Cap</th>
+                <th>Borrow CF</th>
+                <th>Liquidate CF</th>
+              </tr>
+            </thead>
+            <tbody id="markets-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2>Transaction Log</h2>
+        <pre id="tx-log">Ready.</pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

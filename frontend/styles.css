@@ -258,6 +258,14 @@ body[data-theme='dark'] .btn.danger {
 
 .tabs {
   margin: 10px 0 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tabs-left,
+.tabs-right {
   display: inline-flex;
   gap: 4px;
   background: #e9efec;
@@ -281,7 +289,8 @@ body[data-theme='dark'] .btn.danger {
   box-shadow: 0 2px 8px rgba(9, 18, 13, 0.08);
 }
 
-body[data-theme='dark'] .tabs {
+body[data-theme='dark'] .tabs-left,
+body[data-theme='dark'] .tabs-right {
   background: #24302a;
 }
 
@@ -951,6 +960,10 @@ body[data-theme='dark'] pre {
 
   .topbar {
     flex-direction: column;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
   }
 
   .topbar-actions {

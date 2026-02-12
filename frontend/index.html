@@ -58,10 +58,14 @@
       </section>
 
       <section class="tabs reveal">
-        <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>
-        <button id="tab-howto-btn" class="tab-btn" data-panel="howto">How To Use</button>
-        <button id="tab-markets-btn" class="tab-btn" data-panel="markets">All Markets</button>
-        <button id="tab-savings-btn" class="tab-btn" data-panel="savings">Savings</button>
+        <div class="tabs-left">
+          <button id="tab-dashboard-btn" class="tab-btn active" data-panel="dashboard">Dashboard</button>
+          <button id="tab-markets-btn" class="tab-btn" data-panel="markets">All Markets</button>
+          <button id="tab-savings-btn" class="tab-btn" data-panel="savings">Savings</button>
+        </div>
+        <div class="tabs-right">
+          <button id="tab-howto-btn" class="tab-btn" data-panel="howto">How To Use</button>
+        </div>
       </section>
 
       <section id="panel-dashboard" class="tab-panel active">
@@ -234,27 +238,11 @@
             </li>
 
             <li class="howto-item">
-              <h3>Claim Testnet ETH for Gas</h3>
-              <p class="hint">Open Robinhood&apos;s faucet and request ETH to your connected wallet.</p>
+              <h3>Claim Testnet ETH + Stock Tokens</h3>
+              <p class="hint">Open Robinhood&apos;s faucet and request ETH plus the available test tokens to your connected wallet.</p>
               <div class="btn-row">
-                <a id="howto-eth-faucet-link" class="btn" href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer">Open ETH Faucet</a>
+                <a id="howto-eth-faucet-link" class="btn" href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer">Open Robinhood Faucet</a>
               </div>
-            </li>
-
-            <li class="howto-item">
-              <h3>Claim rUSD + Stock Tokens</h3>
-              <p class="hint">Select a token and claim from the onchain faucet contract (1 claim per token every 24h).</p>
-              <div class="form-grid">
-                <label>
-                  <span>Faucet Token</span>
-                  <select id="howto-faucet-token-select"></select>
-                </label>
-              </div>
-              <div class="btn-row">
-                <button id="howto-claim-token-btn" class="btn">Claim Token</button>
-                <a id="howto-fauceteer-link" class="btn ghost" href="#" target="_blank" rel="noreferrer">Open Fauceteer</a>
-              </div>
-              <p class="hint fine-print">Faucet address: <span id="howto-fauceteer-address" class="mono">-</span></p>
             </li>
 
             <li class="howto-item">

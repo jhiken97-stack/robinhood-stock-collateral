@@ -9,6 +9,8 @@ const CHAIN = {
 const THEME_KEY = 'robinhood-ui-theme';
 const SAVINGS_KEY = 'robinhood-savings-allocations-v1';
 const POINTS_KEY_PREFIX = 'robinhood-points-v1';
+const CHATBOT_WELCOME = 'I can help with app usage (wallet setup, faucet, supply/borrow, savings, points, and risks). I cannot provide financial or investment advice.';
+const CHATBOT_NO_ADVICE = 'I cannot provide financial, investment, tax, legal, or trading advice. I can only explain how to use this app and its mechanics.';
 const SAVINGS_STRATEGIES = [
   { id: 'aave_gho', name: 'Aave Savings', asset: 'GHO', apy: 0.0425 },
   { id: 'ethena_usde', name: 'Ethena Savings', asset: 'USDe', apy: 0.058 },
@@ -111,6 +113,12 @@ const els = {
   savingsStrategiesBody: document.getElementById('savings-strategies-body'),
   savingsApplyBtn: document.getElementById('savings-apply-btn'),
   savingsResetBtn: document.getElementById('savings-reset-btn'),
+  chatbotToggleBtn: document.getElementById('chatbot-toggle-btn'),
+  chatbotPanel: document.getElementById('chatbot-panel'),
+  chatbotCloseBtn: document.getElementById('chatbot-close-btn'),
+  chatbotMessages: document.getElementById('chatbot-messages'),
+  chatbotForm: document.getElementById('chatbot-form'),
+  chatbotInput: document.getElementById('chatbot-input'),
 };
 
 const state = {
@@ -222,6 +230,123 @@ function setCometUi(address) {
   if (els.cometExplorerLink) {
     els.cometExplorerLink.href = `${CHAIN.explorer}/address/${value}`;
   }
+}
+
+function setChatbotOpen(open) {
+  const isOpen = !!open;
+  if (els.chatbotPanel) {
+    els.chatbotPanel.hidden = !isOpen;
+  }
+  if (els.chatbotToggleBtn) {
+    els.chatbotToggleBtn.setAttribute('aria-expanded', String(isOpen));
+  }
+  if (isOpen && els.chatbotInput) {
+    els.chatbotInput.focus();
+  }
+}
+
+function addChatbotMessage(role, text) {
+  if (!els.chatbotMessages) return;
+  const row = document.createElement('div');
+  row.className = `chatbot-msg ${role}`;
+  row.textContent = text;
+  els.chatbotMessages.appendChild(row);
+  els.chatbotMessages.scrollTop = els.chatbotMessages.scrollHeight;
+}
+
+function isAdviceRequest(question) {
+  const q = question.toLowerCase();
+  const advicePatterns = [
+    /\bshould i\b/,
+    /\bwhat should i\b/,
+    /\bbuy\b/,
+    /\bsell\b/,
+    /\binvest\b/,
+    /\btrade\b/,
+    /\bprofit\b/,
+    /\breturn\b/,
+    /\bprice target\b/,
+    /\bportfolio\b/,
+    /\bbest strategy\b/,
+    /\bwhich strategy\b/,
+    /\bworth it\b/,
+    /\brecommend\b/,
+    /\bprediction\b/,
+    /\bmoon\b/,
+    /\bfinancial advice\b/,
+  ];
+  return advicePatterns.some((pattern) => pattern.test(q));
+}
+
+function getChatbotAnswer(question) {
+  const q = question.trim().toLowerCase();
+  if (!q) return 'Please type a question.';
+
+  if (isAdviceRequest(q)) {
+    return CHATBOT_NO_ADVICE;
+  }
+
+  if (q.includes('connect') && q.includes('wallet')) {
+    return 'Use the Connect Wallet button at the top-right. Approve MetaMask, then ensure network is Robinhood Testnet.';
+  }
+
+  if (q.includes('network') || q.includes('chain id') || q.includes('rpc')) {
+    return 'Robinhood Testnet settings: Chain ID 46630, RPC https://rpc.testnet.chain.robinhood.com, currency ETH.';
+  }
+
+  if (q.includes('faucet') || q.includes('test eth') || q.includes('testnet eth') || q.includes('claim token')) {
+    return 'Open the Robinhood faucet from the How To Use tab and claim test ETH + available test tokens. Faucet requests can be rate-limited.';
+  }
+
+  if ((q.includes('supply') && q.includes('collateral')) || q.includes('deposit collateral')) {
+    return 'Go to Dashboard > Actions > Collateral. Select a token, click Approve, then Supply.';
+  }
+
+  if (q.includes('borrow')) {
+    return 'Go to Dashboard > Actions > Base. Enter amount and click Borrow Base. Keep health factor above 1.00.';
+  }
+
+  if (q.includes('repay') || q.includes('withdraw collateral')) {
+    return 'Use Dashboard > Actions. Repay with Repay Base. Withdraw collateral with Withdraw in the Collateral section.';
+  }
+
+  if (q.includes('savings') || q.includes('strategy')) {
+    return 'Savings tab is a simulated allocation flow on testnet. Set allocation amounts, click Apply Allocations, and note the 0.1% admin fee disclosure.';
+  }
+
+  if (q.includes('point')) {
+    return 'Points accrue in real time at 1 point per minute per $1 of supplied collateral. Stored per wallet+chain+site in your browser.';
+  }
+
+  if (q.includes('liquidation') || q.includes('health factor') || q.includes('hf')) {
+    return 'Liquidation trigger is health factor 1.00. Use the HF bar and risk zone indicator on Dashboard to monitor position health.';
+  }
+
+  if (q.includes('report') || q.includes('bug') || q.includes('issue')) {
+    return 'Use the Report Issue link in the footer to open a GitHub issue.';
+  }
+
+  if (q.includes('terms') || q.includes('tos')) {
+    return 'Terms of Service is linked in the footer.';
+  }
+
+  return 'I can help with: wallet setup, network config, faucet, supply/borrow flow, savings simulation, points, liquidation risk, and issue reporting.';
+}
+
+function handleChatbotSubmit() {
+  const value = (els.chatbotInput?.value || '').trim();
+  if (!value) return;
+  addChatbotMessage('user', value);
+  const answer = getChatbotAnswer(value);
+  addChatbotMessage('assistant', answer);
+  if (els.chatbotInput) els.chatbotInput.value = '';
+}
+
+function initializeChatbot() {
+  if (!els.chatbotMessages) return;
+  els.chatbotMessages.innerHTML = '';
+  addChatbotMessage('assistant', CHATBOT_WELCOME);
+  setChatbotOpen(false);
 }
 
 function applyTheme(theme) {
@@ -945,6 +1070,12 @@ function wireEvents() {
     const preview = readSavingsAllocationsFromInputs();
     setSavingsMetrics(preview);
   });
+  els.chatbotToggleBtn.addEventListener('click', () => setChatbotOpen(true));
+  els.chatbotCloseBtn.addEventListener('click', () => setChatbotOpen(false));
+  els.chatbotForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleChatbotSubmit();
+  });
 
   const injected = getInjectedProvider();
   if (injected && injected.on) {
@@ -956,6 +1087,7 @@ function wireEvents() {
 async function bootstrap() {
   wireEvents();
   initializeTheme();
+  initializeChatbot();
   setActiveTab('dashboard');
   renderPoints();
   state.savingsAllocations = loadSavingsAllocations();

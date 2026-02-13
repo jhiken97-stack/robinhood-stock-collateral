@@ -81,24 +81,34 @@ body[data-theme='dark'] {
 .topbar {
   display: flex;
   justify-content: space-between;
-  gap: 14px;
+  gap: 20px;
   align-items: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .brand-wrap {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
+.brand-logo-frame {
+  width: min(660px, 56vw);
+  height: clamp(72px, 7vw, 102px);
+  overflow: hidden;
+  border-radius: 8px;
+}
+
 .brand-logo {
-  width: auto;
-  height: clamp(92px, 13vw, 148px);
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
   display: block;
+  transform: scale(1.8);
+  transform-origin: left center;
   filter: drop-shadow(0 8px 16px rgba(7, 18, 12, 0.12));
 }
 
@@ -143,7 +153,8 @@ h2 {
 }
 
 .brand-subhead {
-  margin-top: 0;
+  margin-top: 2px;
+  font-size: 0.95rem;
 }
 
 .actions-row,
@@ -157,9 +168,9 @@ h2 {
   display: grid;
   gap: 8px;
   justify-items: end;
-  align-self: stretch;
-  align-content: space-between;
-  min-height: 98px;
+  align-self: flex-start;
+  align-content: start;
+  min-height: 0;
   flex-shrink: 0;
 }
 
@@ -1153,10 +1164,14 @@ body[data-theme='dark'] pre {
     align-items: flex-start;
   }
 
-  .brand-logo {
+  .brand-logo-frame {
     width: 100%;
     max-width: 560px;
-    height: auto;
+    height: 84px;
+  }
+
+  .brand-logo {
+    transform: scale(1.85);
   }
 
   .site-footer {

@@ -108,7 +108,7 @@ body[data-theme='dark'] {
   object-fit: cover;
   object-position: left center;
   display: block;
-  transform: scale(1.08);
+  transform: translateX(-30px) scale(1.08);
   transform-origin: left center;
   filter: drop-shadow(0 8px 16px rgba(7, 18, 12, 0.12));
 }
@@ -1168,7 +1168,7 @@ body[data-theme='dark'] pre {
   }
 
   .brand-logo {
-    transform: scale(1.12);
+    transform: translateX(-20px) scale(1.12);
   }
 
   .site-footer {

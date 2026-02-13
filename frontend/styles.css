@@ -96,8 +96,8 @@ body[data-theme='dark'] {
 }
 
 .brand-logo-frame {
-  width: min(920px, 70vw);
-  height: clamp(110px, 10vw, 160px);
+  width: min(840px, 62vw);
+  height: clamp(86px, 7.8vw, 124px);
   overflow: hidden;
   border-radius: 8px;
 }
@@ -108,7 +108,7 @@ body[data-theme='dark'] {
   object-fit: cover;
   object-position: left center;
   display: block;
-  transform: scale(2.2);
+  transform: scale(1.7);
   transform-origin: left center;
   filter: drop-shadow(0 8px 16px rgba(7, 18, 12, 0.12));
 }
@@ -1163,12 +1163,12 @@ body[data-theme='dark'] pre {
 
   .brand-logo-frame {
     width: 100%;
-    max-width: 680px;
-    height: 112px;
+    max-width: 620px;
+    height: 92px;
   }
 
   .brand-logo {
-    transform: scale(2.2);
+    transform: scale(1.75);
   }
 
   .site-footer {

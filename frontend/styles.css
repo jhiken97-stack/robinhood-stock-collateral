@@ -247,6 +247,11 @@ h2 {
   box-shadow: none;
 }
 
+#connect-btn {
+  width: 172px;
+  text-align: center;
+}
+
 body[data-theme='dark'] .btn.ghost {
   background: #1a221d;
   color: #d6e6dd;

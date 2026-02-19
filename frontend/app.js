@@ -126,6 +126,7 @@ const els = {
   chatbotMessages: document.getElementById('chatbot-messages'),
   chatbotForm: document.getElementById('chatbot-form'),
   chatbotInput: document.getElementById('chatbot-input'),
+  notifyToast: document.getElementById('notify-toast'),
 };
 
 const state = {
@@ -147,6 +148,7 @@ const state = {
   pointsLastPersistMs: 0,
   collaterals: [],
   loading: false,
+  notifyToastTimer: null,
 };
 
 function requireConnected() {
@@ -168,6 +170,26 @@ function getInjectedProvider() {
 function log(message) {
   const line = `[${new Date().toLocaleTimeString()}] ${message}`;
   els.txLog.textContent = `${line}\n${els.txLog.textContent}`.trim();
+}
+
+function showToast(message, durationMs = 6500) {
+  if (!els.notifyToast) return;
+  const text = (message || '').trim();
+  if (!text) return;
+  els.notifyToast.textContent = text;
+  els.notifyToast.hidden = false;
+  els.notifyToast.classList.add('show');
+
+  if (state.notifyToastTimer) {
+    window.clearTimeout(state.notifyToastTimer);
+  }
+  state.notifyToastTimer = window.setTimeout(() => {
+    if (!els.notifyToast) return;
+    els.notifyToast.classList.remove('show');
+    window.setTimeout(() => {
+      if (els.notifyToast) els.notifyToast.hidden = true;
+    }, 170);
+  }, durationMs);
 }
 
 function fmtAmount(value, decimals = 2) {
@@ -1058,6 +1080,25 @@ function cleanProviderErrorMessage(message) {
     .trim();
 }
 
+function getErrorMessage(error) {
+  const raw = extractProviderErrorMessage(error);
+  return cleanProviderErrorMessage(raw);
+}
+
+function notifyActionError(context, error, options = {}) {
+  const reason = getErrorMessage(error);
+  const message = `${context}: ${reason}`;
+  log(message);
+  showToast(message);
+
+  if (els.chatbotMessages) {
+    addChatbotMessage('assistant', `Alert: ${message}`);
+  }
+  if (options.openChat) {
+    setChatbotOpen(true);
+  }
+}
+
 async function runTx(label, txPromise) {
   const tx = await txPromise;
   log(`${label}: submitted ${tx.hash}`);
@@ -1124,7 +1165,7 @@ async function borrowBase() {
   try {
     await cometWithSigner.callStatic.withdraw(state.base.address, amount);
   } catch (error) {
-    const raw = cleanProviderErrorMessage(extractProviderErrorMessage(error));
+    const raw = getErrorMessage(error);
     throw new Error(
       `Borrow pre-check failed. Amount likely exceeds your available borrow capacity at current collateral and prices. ${raw}`
     );
@@ -1177,7 +1218,7 @@ async function connectAndLoad() {
 
 function wireEvents() {
   els.connectBtn.addEventListener('click', () => connectAndLoad().catch(() => {}));
-  els.refreshBtn.addEventListener('click', () => refreshUi().catch((e) => log(`Refresh error: ${e.message || e}`)));
+  els.refreshBtn.addEventListener('click', () => refreshUi().catch((e) => notifyActionError('Refresh error', e)));
   els.themeToggleBtn.addEventListener('click', () => {
     const current = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     applyTheme(current === 'dark' ? 'light' : 'dark');
@@ -1194,20 +1235,20 @@ function wireEvents() {
   els.tabHowtoBtn.addEventListener('click', () => setActiveTab('howto'));
   els.tabMarketsBtn.addEventListener('click', () => setActiveTab('markets'));
   els.tabSavingsBtn.addEventListener('click', () => setActiveTab('savings'));
-  els.howtoAddNetworkBtn.addEventListener('click', () => addOrSwitchNetworkFromHowTo().catch((e) => log(`Network setup error: ${e.message || e}`)));
+  els.howtoAddNetworkBtn.addEventListener('click', () => addOrSwitchNetworkFromHowTo().catch((e) => notifyActionError('Network setup error', e)));
 
-  els.approveAssetBtn.addEventListener('click', () => approveAsset().catch((e) => log(`Approve error: ${e.message || e}`)));
-  els.supplyAssetBtn.addEventListener('click', () => supplyAsset().catch((e) => log(`Supply error: ${e.message || e}`)));
-  els.withdrawAssetBtn.addEventListener('click', () => withdrawAsset().catch((e) => log(`Withdraw error: ${e.message || e}`)));
+  els.approveAssetBtn.addEventListener('click', () => approveAsset().catch((e) => notifyActionError('Approve error', e)));
+  els.supplyAssetBtn.addEventListener('click', () => supplyAsset().catch((e) => notifyActionError('Supply error', e)));
+  els.withdrawAssetBtn.addEventListener('click', () => withdrawAsset().catch((e) => notifyActionError('Withdraw error', e)));
 
-  els.approveBaseBtn.addEventListener('click', () => approveBase().catch((e) => log(`Approve base error: ${e.message || e}`)));
-  els.borrowBaseBtn.addEventListener('click', () => borrowBase().catch((e) => log(`Borrow error: ${e.message || e}`)));
-  els.repayBaseBtn.addEventListener('click', () => repayBase().catch((e) => log(`Repay error: ${e.message || e}`)));
+  els.approveBaseBtn.addEventListener('click', () => approveBase().catch((e) => notifyActionError('Approve base error', e)));
+  els.borrowBaseBtn.addEventListener('click', () => borrowBase().catch((e) => notifyActionError('Borrow error', e, { openChat: true })));
+  els.repayBaseBtn.addEventListener('click', () => repayBase().catch((e) => notifyActionError('Repay error', e)));
   els.savingsApplyBtn.addEventListener('click', () => {
     try {
       applySavingsAllocations();
     } catch (e) {
-      log(`Savings apply error: ${e.message || e}`);
+      notifyActionError('Savings apply error', e);
     }
   });
   els.savingsResetBtn.addEventListener('click', () => resetSavingsAllocations());

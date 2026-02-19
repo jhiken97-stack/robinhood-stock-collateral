@@ -723,6 +723,8 @@ function resetSavingsAllocations() {
 
 async function loadAliases() {
   const paths = [
+    './aliases.json',
+    '/frontend/aliases.json',
     '/deployments/robinhood/stocks/aliases.json',
     '../deployments/robinhood/stocks/aliases.json',
     './deployments/robinhood/stocks/aliases.json',
@@ -739,8 +741,6 @@ async function loadAliases() {
       // Try next path.
     }
   }
-
-  log('Using fallback contract addresses (aliases.json not found via fetch).');
 }
 
 async function ensureWallet() {

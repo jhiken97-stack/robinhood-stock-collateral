@@ -1034,6 +1034,30 @@ function parseAmountInput(input, decimals) {
   return ethers.utils.parseUnits(raw, decimals);
 }
 
+function extractProviderErrorMessage(error) {
+  const candidates = [
+    error?.error?.error?.message,
+    error?.error?.message,
+    error?.reason,
+    error?.data?.message,
+    error?.message,
+  ];
+  for (const msg of candidates) {
+    if (typeof msg === 'string' && msg.trim()) {
+      return msg.trim();
+    }
+  }
+  return 'execution reverted';
+}
+
+function cleanProviderErrorMessage(message) {
+  if (!message) return 'execution reverted';
+  return message
+    .replace(/\s*\[ See: https?:\/\/[^\]]+\]/g, '')
+    .replace(/^Error:\s*/i, '')
+    .trim();
+}
+
 async function runTx(label, txPromise) {
   const tx = await txPromise;
   log(`${label}: submitted ${tx.hash}`);
@@ -1075,7 +1099,38 @@ async function approveBase() {
 async function borrowBase() {
   requireConnected();
   const amount = parseAmountInput(els.baseAmount.value, state.base.decimals);
-  await runTx(`Borrow ${state.base.symbol}`, state.comet.connect(state.signer).withdraw(state.base.address, amount));
+  const cometWithSigner = state.comet.connect(state.signer);
+
+  const [marketCashRaw, baseBorrowMinRaw, currentBorrowRaw] = await Promise.all([
+    state.baseToken.balanceOf(state.aliases.comet),
+    state.comet.baseBorrowMin(),
+    state.comet.borrowBalanceOf(state.account),
+  ]);
+
+  if (amount.gt(marketCashRaw)) {
+    const marketCash = Number(ethers.utils.formatUnits(marketCashRaw, state.base.decimals));
+    throw new Error(
+      `Borrow amount exceeds available market cash (${fmtAmount(marketCash, 4)} ${state.base.symbol}).`
+    );
+  }
+
+  if (currentBorrowRaw.isZero() && amount.lt(baseBorrowMinRaw)) {
+    const minBorrow = Number(ethers.utils.formatUnits(baseBorrowMinRaw, state.base.decimals));
+    throw new Error(
+      `First borrow must be at least ${fmtAmount(minBorrow, 4)} ${state.base.symbol}.`
+    );
+  }
+
+  try {
+    await cometWithSigner.callStatic.withdraw(state.base.address, amount);
+  } catch (error) {
+    const raw = cleanProviderErrorMessage(extractProviderErrorMessage(error));
+    throw new Error(
+      `Borrow pre-check failed. Amount likely exceeds your available borrow capacity at current collateral and prices. ${raw}`
+    );
+  }
+
+  await runTx(`Borrow ${state.base.symbol}`, cometWithSigner.withdraw(state.base.address, amount));
 }
 
 async function repayBase() {

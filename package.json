@@ -36,8 +36,6 @@
     "lint-contracts:fix": "solhint --fix 'contracts/**/*.sol'",
     "scenario": "hardhat scenario",
     "spider": "hardhat spider",
-    "robinhood:relay-prices": "hardhat run scripts/robinhood-relay-chainlink-prices.ts --network robinhood",
-    "robinhood:relay-prices:loop": "POLL_INTERVAL_SECONDS=5 hardhat run scripts/robinhood-relay-chainlink-prices.ts --network robinhood",
     "test": "hardhat test ./test/*.ts ./test/**/*.ts ./plugins/deployment_manager/test/*.ts ",
     "test:coverage": "NODE_OPTIONS='--max-old-space-size=8192' hardhat coverage --no-compile",
     "audit:liquidator": "vendoza contracts/liquidator/vendor/manifest.json",
